@@ -5,6 +5,7 @@ import com.example.commerce.dtos.requests.LoginDTO;
 import com.example.commerce.dtos.requests.UpdateUserDTO;
 import com.example.commerce.dtos.requests.UserRegistrationDTO;
 import com.example.commerce.dtos.responses.*;
+import com.example.commerce.errorhandlers.UnauthorizedException;
 import com.example.commerce.interfaces.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,6 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 
 @Tag(name = "User Management")
 @RestController
@@ -62,6 +64,58 @@ public class UserController {
         response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
 
         ApiResponse<LoginResponseDTO> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "User logged in successfully", authResponse.getUser());
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @PostMapping("/public/refresh")
+    public ResponseEntity<ApiResponse<String>> refreshToken(
+            @CookieValue(name="refreshToken", required = false) String refreshToken, 
+            HttpServletResponse response) {
+        
+        if(refreshToken == null){
+            throw new UnauthorizedException("Refresh token is missing");
+        }
+        
+        RefreshTokenResponseDTO tokenResponse = userService.validateAndReturnTokens(refreshToken);
+        
+        // Set new refresh token in cookie (token rotation for security)
+        ResponseCookie newRefreshTokenCookie = ResponseCookie.from("refreshToken", tokenResponse.getRefreshToken())
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/")
+                .maxAge(7 * 24 * 60 * 60)
+                .sameSite(cookieSameSite)
+                .build();
+        
+        response.addHeader(HttpHeaders.SET_COOKIE, newRefreshTokenCookie.toString());
+        
+        ApiResponse<String> apiResponse = new ApiResponse<>(
+            HttpStatus.OK.value(), 
+            "Access token refreshed successfully", 
+            tokenResponse.getAccessToken()
+        );
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @Operation(summary = "Logout user")
+    @PostMapping("/public/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(HttpServletResponse response) {
+        // Clear refresh token cookie
+        ResponseCookie clearCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/")
+                .maxAge(0) // Expire immediately
+                .sameSite(cookieSameSite)
+                .build();
+        
+        response.addHeader(HttpHeaders.SET_COOKIE, clearCookie.toString());
+        
+        ApiResponse<Void> apiResponse = new ApiResponse<>(
+            HttpStatus.OK.value(), 
+            "Logged out successfully", 
+            null
+        );
         return ResponseEntity.ok(apiResponse);
     }
 

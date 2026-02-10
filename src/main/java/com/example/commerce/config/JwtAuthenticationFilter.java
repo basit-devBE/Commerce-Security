@@ -37,15 +37,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
         Long userId = jwtService.extractUserIdFromAccessToken(token);
         String email = jwtService.extractEmailFromAccessToken(token);
         String role = jwtService.extractRoleFromAccessToken(token);
-        
-        logger.info("Extracted from token - userId: " + userId + ", email: " + email + ", role: " + role);
-        
         var authentication = new UsernamePasswordAuthenticationToken(email, null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authentication);
         request.setAttribute("authenticatedUserId", userId);
         filterChain.doFilter(request, response);
-
-
     }
 }

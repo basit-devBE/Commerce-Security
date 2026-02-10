@@ -26,8 +26,8 @@ const Navbar = () => {
     ...(user ? [{ name: 'Orders', href: '/orders', icon: ClipboardDocumentListIcon }] : []),
   ];
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 

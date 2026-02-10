@@ -24,10 +24,27 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle errors
+// Track if we're currently refreshing to avoid multiple refresh calls
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+// Response interceptor to handle errors and token refresh
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
+    
     // Log detailed error information for debugging
     if (error.response?.data) {
       console.error('API Error:', {
@@ -38,11 +55,68 @@ api.interceptors.response.use(
       });
     }
     
-    if (error.response?.status === 401) {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+    // Handle 401 Unauthorized
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      // Don't retry for login, register, refresh, or logout endpoints
+      if (originalRequest.url.includes('/public/login') || 
+          originalRequest.url.includes('/public/register') ||
+          originalRequest.url.includes('/public/refresh') ||
+          originalRequest.url.includes('/public/logout')) {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        // If already refreshing, queue this request
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(token => {
+            originalRequest.headers['Authorization'] = 'Bearer ' + token;
+            return api(originalRequest);
+          })
+          .catch(err => {
+            return Promise.reject(err);
+          });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        // Try to refresh the token
+        const response = await axios.post(
+          `${API_BASE_URL}/users/public/refresh`,
+          {},
+          { withCredentials: true }
+        );
+        
+        const newToken = response.data.data;
+        localStorage.setItem('authToken', newToken);
+        
+        // Update default header
+        api.defaults.headers.common['Authorization'] = 'Bearer ' + newToken;
+        originalRequest.headers['Authorization'] = 'Bearer ' + newToken;
+        
+        processQueue(null, newToken);
+        isRefreshing = false;
+        
+        // Retry the original request
+        return api(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        isRefreshing = false;
+        
+        // Refresh failed, logout user
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
     }
+    
     return Promise.reject(error);
   }
 );
@@ -51,6 +125,8 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (data) => api.post('/users/public/register', data),
   login: (data) => api.post('/users/public/login', data),
+  logout: () => api.post('/users/public/logout'),
+  refresh: () => api.post('/users/public/refresh'),
   getProfile: () => api.get('/users/profile'),
   updateProfile: (data) => api.put('/users/updateProfile', data),
 };

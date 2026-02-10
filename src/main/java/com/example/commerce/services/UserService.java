@@ -5,10 +5,12 @@ import com.example.commerce.dtos.requests.UpdateUserDTO;
 import com.example.commerce.dtos.requests.UserRegistrationDTO;
 import com.example.commerce.dtos.responses.AuthResponseDTO;
 import com.example.commerce.dtos.responses.LoginResponseDTO;
+import com.example.commerce.dtos.responses.RefreshTokenResponseDTO;
 import com.example.commerce.dtos.responses.userSummaryDTO;
 import com.example.commerce.entities.UserEntity;
 import com.example.commerce.errorhandlers.ResourceAlreadyExists;
 import com.example.commerce.errorhandlers.ResourceNotFoundException;
+import com.example.commerce.errorhandlers.UnauthorizedException;
 import com.example.commerce.interfaces.IUserService;
 import com.example.commerce.mappers.UserMapper;
 import com.example.commerce.repositories.UserRepository;
@@ -87,6 +89,7 @@ public class UserService implements IUserService {
         }
     }
 
+
     @Cacheable(value = "userByEmail", key = "#email")
     public userSummaryDTO findUserByEmail(String email){
         Optional<UserEntity> userOpt = userRepository.findByEmail(email);
@@ -143,5 +146,20 @@ public class UserService implements IUserService {
         UserEntity userEntity = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
         userRepository.delete(userEntity);
+    }
+
+    public RefreshTokenResponseDTO validateAndReturnTokens(String refreshToken){
+        if(jwtService.validateRefreshToken(refreshToken)){
+            String email = jwtService.extractEmailFromRefreshToken(refreshToken);
+            UserEntity userEntity = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+            String newAccessToken = jwtService.generateAccessToken(userEntity);
+            String newRefreshToken = jwtService.generateRefreshToken(userEntity);
+            
+            return new RefreshTokenResponseDTO(newAccessToken, newRefreshToken);
+        } else {
+            throw new UnauthorizedException("Invalid or expired refresh token");
+        }
     }
 }

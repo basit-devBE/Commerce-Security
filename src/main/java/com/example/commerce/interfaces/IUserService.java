@@ -5,6 +5,7 @@ import com.example.commerce.dtos.requests.UpdateUserDTO;
 import com.example.commerce.dtos.requests.UserRegistrationDTO;
 import com.example.commerce.dtos.responses.AuthResponseDTO;
 import com.example.commerce.dtos.responses.LoginResponseDTO;
+import com.example.commerce.dtos.responses.RefreshTokenResponseDTO;
 import com.example.commerce.dtos.responses.userSummaryDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,4 +28,6 @@ public interface IUserService {
     List<userSummaryDTO> getAllUsersList();
 
     void deleteUser(Long id);
+
+    RefreshTokenResponseDTO validateAndReturnTokens(String refreshToken);
 }
