@@ -1,13 +1,11 @@
 package com.example.commerce.controllers;
 
 
-import com.example.commerce.config.RequiresRole;
 import com.example.commerce.dtos.requests.AddProductDTO;
 import com.example.commerce.dtos.requests.UpdateProductDTO;
 import com.example.commerce.dtos.responses.ApiResponse;
 import com.example.commerce.dtos.responses.PagedResponse;
 import com.example.commerce.dtos.responses.ProductResponseDTO;
-import com.example.commerce.enums.UserRole;
 import com.example.commerce.interfaces.IProductService;
 import com.example.commerce.utils.sorting.SortingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,8 +31,7 @@ public class ProductController {
     }
 
     @Operation(summary = "Add a new product")
-    @RequiresRole(UserRole.ADMIN)
-    @PostMapping("/add")
+    @PostMapping("/admin/add")
     public ResponseEntity<ApiResponse<ProductResponseDTO>> addProduct(@Valid @RequestBody AddProductDTO request){
         ProductResponseDTO product = productService.addProduct(request);
         ApiResponse<ProductResponseDTO> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Product added successfully", product);
@@ -93,8 +90,7 @@ public class ProductController {
     }
 
     @Operation(summary = "Update a product")
-    @RequiresRole(UserRole.ADMIN)
-    @PutMapping("/update/{id}")
+    @PutMapping("/admin/update/{id}")
     public ResponseEntity<ApiResponse<ProductResponseDTO>> updateProduct(
             @PathVariable Long id, 
             @Valid @RequestBody UpdateProductDTO request){
@@ -104,8 +100,7 @@ public class ProductController {
     }
 
     @Operation(summary = "Delete a product")
-    @RequiresRole(UserRole.ADMIN)
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/admin/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Long id){
         productService.deleteProduct(id);
         ApiResponse<Void> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Product deleted successfully", null);

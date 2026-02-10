@@ -1,12 +1,10 @@
 package com.example.commerce.controllers;
 
-import com.example.commerce.config.RequiresRole;
 import com.example.commerce.dtos.requests.AddOrderDTO;
 import com.example.commerce.dtos.requests.UpdateOrderDTO;
 import com.example.commerce.dtos.responses.ApiResponse;
 import com.example.commerce.dtos.responses.OrderResponseDTO;
 import com.example.commerce.dtos.responses.PagedResponse;
-import com.example.commerce.enums.UserRole;
 import com.example.commerce.interfaces.IOrderService;
 import com.example.commerce.utils.sorting.SortingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,7 +32,6 @@ public class OrderController {
     }
 
     @Operation(summary = "Create a new order")
-    @RequiresRole({UserRole.CUSTOMER, UserRole.ADMIN})
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<OrderResponseDTO>> createOrder(
             @Valid @RequestBody AddOrderDTO request,
@@ -46,8 +43,7 @@ public class OrderController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @RequiresRole(UserRole.ADMIN)
-    @GetMapping("/all")
+    @GetMapping("/admin/all")
     public ResponseEntity<ApiResponse<PagedResponse<OrderResponseDTO>>> getAllOrders(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size,
@@ -59,7 +55,6 @@ public class OrderController {
         Page<OrderResponseDTO> orders = orderService.getAllOrders(pageable);
         List<OrderResponseDTO> orderList = orders.getContent();
         
-        // Apply custom sorting if sortBy is specified
         if (sortBy != null) {
             try {
                 SortingService.OrderSortField field = SortingService.OrderSortField.valueOf(sortBy.toUpperCase());
@@ -81,7 +76,6 @@ public class OrderController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @RequiresRole({UserRole.CUSTOMER, UserRole.ADMIN})
     @GetMapping("/user")
     public ResponseEntity<ApiResponse<PagedResponse<OrderResponseDTO>>> getOrdersByUserId(
             HttpServletRequest httpRequest,
@@ -102,7 +96,6 @@ public class OrderController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @RequiresRole(UserRole.CUSTOMER)
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<OrderResponseDTO>> getOrderById(@PathVariable Long id) {
         OrderResponseDTO order = orderService.getOrderById(id);
@@ -110,8 +103,7 @@ public class OrderController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @RequiresRole(UserRole.ADMIN)
-    @PutMapping("/update/{id}")
+    @PutMapping("/admin/update/{id}")
     public ResponseEntity<ApiResponse<OrderResponseDTO>> updateOrderStatus(
             @PathVariable Long id,
             @Valid @RequestBody UpdateOrderDTO request) {
