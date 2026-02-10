@@ -1,12 +1,10 @@
 package com.example.commerce.controllers;
 
-import com.example.commerce.config.RequiresRole;
 import com.example.commerce.dtos.requests.AddInventoryDTO;
 import com.example.commerce.dtos.requests.UpdateInventoryDTO;
 import com.example.commerce.dtos.responses.ApiResponse;
 import com.example.commerce.dtos.responses.InventoryResponseDTO;
 import com.example.commerce.dtos.responses.PagedResponse;
-import com.example.commerce.enums.UserRole;
 import com.example.commerce.interfaces.IInventoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,16 +26,14 @@ public class InventoryController {
     }
 
     @Operation(summary = "Add inventory")
-    @RequiresRole(UserRole.ADMIN)
-    @PostMapping("/add")
+    @PostMapping("/admin/add")
     public ResponseEntity<ApiResponse<InventoryResponseDTO>> addInventory(@Valid @RequestBody AddInventoryDTO request) {
         InventoryResponseDTO inventory = inventoryService.addInventory(request);
         ApiResponse<InventoryResponseDTO> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Inventory added successfully", inventory);
         return ResponseEntity.ok(apiResponse);
     }
 
-    @RequiresRole(UserRole.ADMIN)
-    @GetMapping("/all")
+    @GetMapping("/admin/all")
     public ResponseEntity<ApiResponse<PagedResponse<InventoryResponseDTO>>> getAllInventories(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size
@@ -69,8 +65,7 @@ public class InventoryController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @RequiresRole(UserRole.ADMIN)
-    @PutMapping("/update/{id}")
+    @PutMapping("/admin/update/{id}")
     public ResponseEntity<ApiResponse<InventoryResponseDTO>> updateInventory(
             @PathVariable Long id,
             @Valid @RequestBody UpdateInventoryDTO request) {
@@ -79,8 +74,7 @@ public class InventoryController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @RequiresRole(UserRole.ADMIN)
-    @PatchMapping("/adjust/{id}")
+    @PatchMapping("/admin/adjust/{id}")
     public ResponseEntity<ApiResponse<InventoryResponseDTO>> adjustInventoryQuantity(
             @PathVariable Long id,
             @RequestParam Integer quantityChange) {
@@ -89,8 +83,7 @@ public class InventoryController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @RequiresRole(UserRole.ADMIN)
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/admin/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteInventory(@PathVariable Long id) {
         inventoryService.deleteInventory(id);
         ApiResponse<Void> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Inventory deleted successfully", null);

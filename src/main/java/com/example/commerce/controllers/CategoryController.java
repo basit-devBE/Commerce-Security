@@ -1,12 +1,10 @@
 package com.example.commerce.controllers;
 
-import com.example.commerce.config.RequiresRole;
 import com.example.commerce.dtos.requests.AddCategoryDTO;
 import com.example.commerce.dtos.requests.UpdateCategoryDTO;
 import com.example.commerce.dtos.responses.ApiResponse;
 import com.example.commerce.dtos.responses.CategoryResponseDTO;
 import com.example.commerce.dtos.responses.PagedResponse;
-import com.example.commerce.enums.UserRole;
 import com.example.commerce.interfaces.ICategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,8 +26,7 @@ public class CategoryController {
     }
 
     @Operation(summary = "Add a new category")
-    @RequiresRole(UserRole.ADMIN)
-    @PostMapping("/add")
+    @PostMapping("/admin/add")
     public ResponseEntity<ApiResponse<CategoryResponseDTO>> addCategory(@Valid @RequestBody AddCategoryDTO request) {
         CategoryResponseDTO category = categoryService.addCategory(request);
         ApiResponse<CategoryResponseDTO> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Category added successfully", category);
@@ -61,8 +58,7 @@ public class CategoryController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @RequiresRole(UserRole.ADMIN)
-    @PutMapping("/update/{id}")
+    @PutMapping("/admin/update/{id}")
     public ResponseEntity<ApiResponse<CategoryResponseDTO>> updateCategory(
             @PathVariable Long id,
             @Valid @RequestBody UpdateCategoryDTO request) {
@@ -71,8 +67,7 @@ public class CategoryController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @RequiresRole(UserRole.ADMIN)
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/admin/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable Long id) {
         categoryService.deleteCategory(id);
         ApiResponse<Void> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Category deleted successfully", null);

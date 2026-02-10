@@ -1,4 +1,5 @@
 package com.example.commerce.errorhandlers;
+
 import com.example.commerce.dtos.responses.ErrorResponse;
 import io.swagger.v3.oas.annotations.Hidden;
 import org.hibernate.JDBCException;
@@ -107,6 +108,7 @@ public class CustomExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
+
     @ExceptionHandler(value = IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex, WebRequest request) {
         ErrorResponse error = new ErrorResponse(
@@ -127,5 +129,18 @@ public class CustomExceptionHandler {
             request.getDescription(false)
         );
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    //Custom Handler for 403 Forbidden
+    @ExceptionHandler(value = ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbiddenException(ForbiddenException ex, WebRequest request
+    ) {
+        ErrorResponse error = new ErrorResponse(
+            new Date(),
+            HttpStatus.FORBIDDEN.value(),
+            ex.getMessage(),
+            request.getDescription(false)
+        );
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
 }

@@ -7,6 +7,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Enable sending cookies with requests
 });
 
 // Request interceptor to add auth token
@@ -48,8 +49,8 @@ api.interceptors.response.use(
 
 // Auth APIs
 export const authAPI = {
-  register: (data) => api.post('/users/register', data),
-  login: (data) => api.post('/users/login', data),
+  register: (data) => api.post('/users/public/register', data),
+  login: (data) => api.post('/users/public/login', data),
   getProfile: () => api.get('/users/profile'),
   updateProfile: (data) => api.put('/users/updateProfile', data),
 };
@@ -60,47 +61,46 @@ export const productAPI = {
   getById: (id) => api.get(`/products/${id}`),
   getByPriceRange: (minPrice, maxPrice, params) => 
     api.get('/products/public/price-range', { params: { minPrice, maxPrice, ...params } }),
-  create: (data) => api.post('/products/add', data),
-  update: (id, data) => api.put(`/products/update/${id}`, data),
-  delete: (id) => api.delete(`/products/${id}`),
+  create: (data) => api.post('/products/admin/add', data),
+  update: (id, data) => api.put(`/products/admin/update/${id}`, data),
+  delete: (id) => api.delete(`/products/admin/${id}`),
 };
 
 // Category APIs
 export const categoryAPI = {
   getAll: (params) => api.get('/categories/public/all', { params }),
   getById: (id) => api.get(`/categories/${id}`),
-  create: (data) => api.post('/categories/add', data),
-  update: (id, data) => api.put(`/categories/update/${id}`, data),
-  delete: (id) => api.delete(`/categories/${id}`),
+  create: (data) => api.post('/categories/admin/add', data),
+  update: (id, data) => api.put(`/categories/admin/update/${id}`, data),
+  delete: (id) => api.delete(`/categories/admin/${id}`),
 };
 
 // Order APIs
 export const orderAPI = {
   create: (data) => api.post('/orders/create', data),
   getUserOrders: (params) => api.get('/orders/user', { params }),
-  getAll: (params) => api.get('/orders/all', { params }),
+  getAll: (params) => api.get('/orders/admin/all', { params }),
   getById: (id) => api.get(`/orders/${id}`),
-  updateStatus: (id, data) => api.put(`/orders/update/${id}`, data),
-  delete: (id) => api.delete(`/orders/${id}`),
+  updateStatus: (id, data) => api.put(`/orders/admin/update/${id}`, data),
 };
 
 // Inventory APIs
 export const inventoryAPI = {
-  getAll: (params) => api.get('/inventory/all', { params }),
+  getAll: (params) => api.get('/inventory/admin/all', { params }),
   getById: (id) => api.get(`/inventory/${id}`),
   getByProductId: (productId) => api.get(`/inventory/product/${productId}`),
-  create: (data) => api.post('/inventory/add', data),
-  update: (id, data) => api.put(`/inventory/update/${id}`, data),
-  adjustQuantity: (id, quantityChange) => api.patch(`/inventory/adjust/${id}`, null, { params: { quantityChange } }),
-  delete: (id) => api.delete(`/inventory/${id}`),
+  create: (data) => api.post('/inventory/admin/add', data),
+  update: (id, data) => api.put(`/inventory/admin/update/${id}`, data),
+  adjustQuantity: (id, quantityChange) => api.patch(`/inventory/admin/adjust/${id}`, null, { params: { quantityChange } }),
+  delete: (id) => api.delete(`/inventory/admin/${id}`),
 };
 
 // User Management APIs (Admin)
 export const userAPI = {
-  getAll: (params) => api.get('/users/all', { params }),
+  getAll: (params) => api.get('/users/admin/all', { params }),
   getById: (id) => api.get(`/users/${id}`),
-  update: (id, data) => api.put(`/users/update/${id}`, data),
-  delete: (id) => api.delete(`/users/${id}`),
+  update: (id, data) => api.put(`/users/admin/update/${id}`, data),
+  delete: (id) => api.delete(`/users/admin/${id}`),
 };
 
 // Cart APIs
@@ -114,9 +114,9 @@ export const cartAPI = {
 
 // Performance APIs
 export const performanceAPI = {
-  getDbMetrics: () => api.get('/performance/db-metrics'),
-  getCacheMetrics: () => api.get('/performance/cache-metrics'),
-  clearMetrics: () => api.delete('/performance/clear-metrics'),
+  getDbMetrics: () => api.get('/performance/admin/db-metrics'),
+  getCacheMetrics: () => api.get('/performance/admin/cache-metrics'),
+  clearMetrics: () => api.delete('/performance/admin/clear-metrics'),
 };
 
 export default api;
