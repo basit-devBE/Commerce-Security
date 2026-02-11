@@ -43,6 +43,8 @@ public class ProductService implements IProductService {
         }
         CategoryEntity category = categoryRepository.findById(addProductDTO.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + addProductDTO.getCategoryId()));
+        //TODO:I should not be getting 404 here because the controller is is just checking the body
+        //TODO:Should be a bad request
         ProductEntity productEntity = productMapper.toEntity(addProductDTO);
         productEntity.setCategory(category);
         ProductEntity savedProduct = productRepository.save(productEntity);

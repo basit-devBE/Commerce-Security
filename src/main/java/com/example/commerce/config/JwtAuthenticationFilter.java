@@ -23,6 +23,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
+        String path = request.getRequestURI();
+        
+        // Skip JWT filter for OAuth2 endpoints
+        if(path.startsWith("/oauth2/") || path.startsWith("/login")){
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
         String authHeader = request.getHeader("Authorization");
         logger.info("Received authHeader: " + authHeader);
         if(authHeader == null || !authHeader.startsWith("Bearer ")){

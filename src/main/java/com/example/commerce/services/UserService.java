@@ -73,6 +73,7 @@ public class UserService implements IUserService {
             );
             if(authentication.isAuthenticated()){
                 UserEntity userEntity = (UserEntity) authentication.getPrincipal();
+                //TODO: surround with an if to check if user is active or not
                 assert userEntity != null;
                 String accesstoken = jwtService.generateAccessToken(userEntity);
                 String refreshtoken = jwtService.generateRefreshToken(userEntity);
