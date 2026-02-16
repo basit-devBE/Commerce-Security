@@ -27,6 +27,7 @@ public class CategoryService implements ICategoryService {
     }
 
     @CachePut(value = "categoryById", key = "#result.id")
+    @CacheEvict(value = "allCategories", allEntries = true)
     public CategoryResponseDTO addCategory(AddCategoryDTO addCategoryDTO) {
         if (categoryRepository.existsByNameIgnoreCase(addCategoryDTO.getName())) {
             throw new ResourceAlreadyExists("Category with name '" + addCategoryDTO.getName() + "' already exists");
@@ -36,6 +37,7 @@ public class CategoryService implements ICategoryService {
         return categoryMapper.toResponseDTO(savedCategory);
     }
 
+    @Cacheable(value = "allCategories", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<CategoryResponseDTO> getAllCategories(Pageable pageable) {
         return categoryRepository.findAll(pageable).map(categoryMapper::toResponseDTO);
     }
@@ -54,6 +56,7 @@ public class CategoryService implements ICategoryService {
     }
 
     @CachePut(value = "categoryById", key = "#id")
+    @CacheEvict(value = "allCategories", allEntries = true)
     public CategoryResponseDTO updateCategory(Long id, UpdateCategoryDTO updateCategoryDTO) {
         CategoryEntity existingCategory = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + id));
@@ -78,7 +81,7 @@ public class CategoryService implements ICategoryService {
         return categoryMapper.toResponseDTO(updatedCategory);
     }
 
-    @CacheEvict(value = "categoryById", key = "#id")
+    @CacheEvict(value = {"categoryById", "allCategories"}, allEntries = true)
     public void deleteCategory(Long id) {
         CategoryEntity category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + id));

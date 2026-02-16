@@ -47,7 +47,7 @@ public class OrderService implements IOrderService {
     }
 
     @CachePut(value = "orderById", key = "#result.id")
-    @CacheEvict(value = {"inventoryById", "inventoryByProductId"}, allEntries = true)
+    @CacheEvict(value = {"inventoryById", "inventoryByProductId", "allOrders"}, allEntries = true)
     @Transactional
     public OrderResponseDTO createOrder(AddOrderDTO addOrderDTO) {
         // Validate user exists
@@ -109,6 +109,7 @@ public class OrderService implements IOrderService {
         return buildOrderResponse(savedOrder, savedItems);
     }
 
+    @Cacheable(value = "allOrders", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<OrderResponseDTO> getAllOrders(Pageable pageable) {
         return orderRepository.findAll(pageable).map(order -> {
             List<OrderItemsEntity> items = orderItemsRepository.findByOrderId(order.getId());
@@ -143,7 +144,7 @@ public class OrderService implements IOrderService {
     }
 
     @CachePut(value = "orderById", key = "#id")
-    @CacheEvict(value = {"inventoryById", "inventoryByProductId"}, allEntries = true)
+    @CacheEvict(value = {"inventoryById", "inventoryByProductId", "allOrders"}, allEntries = true)
     @Transactional
     public OrderResponseDTO updateOrderStatus(Long id, UpdateOrderDTO updateOrderDTO) {
         OrderEntity order = orderRepository.findById(id)

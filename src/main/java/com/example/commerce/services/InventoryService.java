@@ -37,6 +37,7 @@ public class InventoryService implements IInventoryService {
         @CachePut(value = "inventoryById", key = "#result.id"),
         @CachePut(value = "inventoryByProductId", key = "#addInventoryDTO.productId")
     })
+    @CacheEvict(value = "allInventories", allEntries = true)
     public InventoryResponseDTO addInventory(AddInventoryDTO addInventoryDTO) {
         // Validate product exists
         ProductEntity product = productRepository.findById(addInventoryDTO.getProductId())
@@ -56,6 +57,7 @@ public class InventoryService implements IInventoryService {
         return inventoryMapper.toResponseDTO(savedInventory);
     }
 
+    @Cacheable(value = "allInventories", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<InventoryResponseDTO> getAllInventories(Pageable pageable) {
         return inventoryRepository.findAll(pageable).map(inventoryMapper::toResponseDTO);
     }
@@ -83,7 +85,7 @@ public class InventoryService implements IInventoryService {
     }
 
     @CachePut(value = "inventoryById", key = "#id")
-    @CacheEvict(value = "inventoryByProductId", allEntries = true)
+    @CacheEvict(value = {"inventoryByProductId", "allInventories"}, allEntries = true)
     public InventoryResponseDTO updateInventory(Long id, UpdateInventoryDTO updateInventoryDTO) {
         InventoryEntity existingInventory = inventoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with ID: " + id));
@@ -115,7 +117,7 @@ public class InventoryService implements IInventoryService {
         return inventoryMapper.toResponseDTO(updatedInventory);
     }
 
-    @CacheEvict(value = {"inventoryById", "inventoryByProductId"}, allEntries = true)
+    @CacheEvict(value = {"inventoryById", "inventoryByProductId", "allInventories"}, allEntries = true)
     public void deleteInventory(Long id) {
         InventoryEntity inventory = inventoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with ID: " + id));

@@ -52,6 +52,7 @@ public class UserService implements IUserService {
         @CachePut(value = "userById", key = "#result.id"),
         @CachePut(value = "userByEmail", key = "#result.email")
     })
+    @CacheEvict(value = "allUsers", allEntries = true)
     public LoginResponseDTO addUser(UserRegistrationDTO userDTO){
 
         Optional<UserEntity> existingUser = userRepository.findByEmail(userDTO.getEmail());
@@ -117,7 +118,7 @@ public class UserService implements IUserService {
     }
 
     @CachePut(value = "userById", key = "#id")
-    @CacheEvict(value = "userByEmail", allEntries = true)
+    @CacheEvict(value = {"userByEmail", "allUsers"}, allEntries = true)
     public userSummaryDTO updateUser(Long id, @Valid UpdateUserDTO userDTO){
         UserEntity userEntity = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
@@ -134,6 +135,7 @@ public class UserService implements IUserService {
         return userMapper.toSummaryDTO(updatedUser);
     }
 
+    @Cacheable(value = "allUsers", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<userSummaryDTO> getAllUsers(Pageable pageable){
       return userRepository.findAll(pageable).map(userMapper::toSummaryDTO);
     }
@@ -148,7 +150,7 @@ public class UserService implements IUserService {
         return userRepository.findAll().stream().map(userMapper::toSummaryDTO).toList();
     }
 
-    @CacheEvict(value = {"userById", "userByEmail"}, allEntries = true)
+    @CacheEvict(value = {"userById", "userByEmail", "allUsers"}, allEntries = true)
     public void deleteUser(Long id){
         UserEntity userEntity = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));

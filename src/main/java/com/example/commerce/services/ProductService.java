@@ -46,16 +46,13 @@ public class ProductService implements IProductService {
             throw new ResourceAlreadyExists("Product already exists");
         }
         CategoryEntity category = categoryRepository.findById(addProductDTO.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + addProductDTO.getCategoryId()));
-        //TODO:I should not be getting 404 here because the controller is is just checking the body
-        //TODO:Should be a bad request
+                .orElseThrow(() -> new IllegalArgumentException("Invalid category ID: " + addProductDTO.getCategoryId()));
         ProductEntity productEntity = productMapper.toEntity(addProductDTO);
         productEntity.setCategory(category);
         ProductEntity savedProduct = productRepository.save(productEntity);
         ProductResponseDTO response =  productMapper.toResponseDTO(savedProduct);
         response.setCategoryName(savedProduct.getCategory().getName());
         
-        // Set quantity from inventory if exists
         inventoryRepository.findByProductId(savedProduct.getId())
                 .ifPresent(inventory -> response.setQuantity(inventory.getQuantity()));
         
@@ -140,7 +137,7 @@ public class ProductService implements IProductService {
         
         if(updateProductDTO.getCategoryId() != null) {
             CategoryEntity category = categoryRepository.findById(updateProductDTO.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + updateProductDTO.getCategoryId()));
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid category ID: " + updateProductDTO.getCategoryId()));
             existingProduct.setCategory(category);
         }
         
