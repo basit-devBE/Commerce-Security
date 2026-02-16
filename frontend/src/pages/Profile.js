@@ -13,18 +13,29 @@ const Profile = () => {
   });
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
-    if (user) {
-      setFormData({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-      });
-    }
-  }, [user]);
+    const fetchProfile = async () => {
+      try {
+        setFetchLoading(true);
+        const response = await authAPI.getProfile();
+        const profileData = response.data.data;
+        setFormData({
+          firstName: profileData.firstName || '',
+          lastName: profileData.lastName || '',
+          email: profileData.email || '',
+        });
+      } catch (err) {
+        setError(err);
+      } finally {
+        setFetchLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -40,12 +51,18 @@ const Profile = () => {
     setSuccessMessage('');
 
     try {
-      await authAPI.updateProfile(formData);
+      const response = await authAPI.updateProfile(formData);
+      const updatedProfile = response.data.data;
+      setFormData({
+        firstName: updatedProfile.firstName || '',
+        lastName: updatedProfile.lastName || '',
+        email: updatedProfile.email || '',
+      });
       setSuccessMessage('Profile updated successfully!');
       setEditing(false);
       
       // Update user in localStorage
-      const updatedUser = { ...user, ...formData };
+      const updatedUser = { ...user, ...updatedProfile };
       localStorage.setItem('user', JSON.stringify(updatedUser));
     } catch (err) {
       setError(err);
@@ -70,6 +87,12 @@ const Profile = () => {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-4xl font-bold text-gray-900 mb-8">My Profile</h1>
 
+        {fetchLoading ? (
+          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading profile...</p>
+          </div>
+        ) : (
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           {/* Profile Header */}
           <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-8 py-12">
@@ -188,6 +211,7 @@ const Profile = () => {
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

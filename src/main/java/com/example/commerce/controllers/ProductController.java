@@ -4,13 +4,13 @@ package com.example.commerce.controllers;
 import com.example.commerce.dtos.requests.AddProductDTO;
 import com.example.commerce.dtos.requests.UpdateProductDTO;
 import com.example.commerce.dtos.responses.ApiResponse;
-import com.example.commerce.dtos.responses.PagedResponse;
 import com.example.commerce.dtos.responses.ProductResponseDTO;
 import com.example.commerce.interfaces.IProductService;
 import com.example.commerce.utils.sorting.SortingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,7 +40,7 @@ public class ProductController {
 
     @Operation(summary = "Get all products")
     @GetMapping("/public/all")
-    public ResponseEntity<ApiResponse<PagedResponse<ProductResponseDTO>>> getAllProducts(
+    public ResponseEntity<ApiResponse<Page<ProductResponseDTO>>> getAllProducts(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size,
             @RequestParam(value = "categoryId", required = false) Long categoryId,
@@ -49,7 +49,7 @@ public class ProductController {
             @RequestParam(value = "algorithm", defaultValue = "QUICKSORT") String algorithm
     ){
         Pageable pageable = Pageable.ofSize(size).withPage(page);
-        PagedResponse<ProductResponseDTO> pagedResponse;
+        Page<ProductResponseDTO> pagedResponse;
         
         if (categoryId != null) {
             pagedResponse = productService.getProductsByCategory(categoryId, pageable);
@@ -59,25 +59,17 @@ public class ProductController {
         
         // Apply custom sorting if sortBy is specified
         if (sortBy != null) {
-            List<ProductResponseDTO> productList = pagedResponse.content();
+            List<ProductResponseDTO> productList = pagedResponse.getContent();
             try {
                 SortingService.ProductSortField field = SortingService.ProductSortField.valueOf(sortBy.toUpperCase());
                 SortingService.SortAlgorithm algo = SortingService.SortAlgorithm.valueOf(algorithm.toUpperCase());
                 sortingService.sortProducts(productList, field, ascending, algo);
-                // Create new PagedResponse with sorted content
-                pagedResponse = new PagedResponse<>(
-                    productList,
-                    pagedResponse.currentPage(),
-                    pagedResponse.totalItems(),
-                    pagedResponse.totalPages(),
-                    pagedResponse.isLast()
-                );
             } catch (IllegalArgumentException e) {
                 // Invalid sortBy or algorithm, ignore and return unsorted
             }
         }
         
-        ApiResponse<PagedResponse<ProductResponseDTO>> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Products fetched successfully", pagedResponse);
+        ApiResponse<Page<ProductResponseDTO>> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Products fetched successfully", pagedResponse);
         return ResponseEntity.ok(apiResponse);
     }
 
@@ -116,15 +108,15 @@ public class ProductController {
     }
 
     @GetMapping("/public/price-range")
-    public  ResponseEntity<ApiResponse<PagedResponse<ProductResponseDTO>>> findProductByPriceRange(
+    public  ResponseEntity<ApiResponse<Page<ProductResponseDTO>>> findProductByPriceRange(
             @RequestParam Double minPrice,
             @RequestParam Double maxPrice,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size
     ){
         Pageable pageable = Pageable.ofSize(size).withPage(page);
-        PagedResponse<ProductResponseDTO> pagedResponse = productService.getProductsByPriceBetween(minPrice, maxPrice, pageable);
-        ApiResponse<PagedResponse<ProductResponseDTO>> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Products fetched successfully", pagedResponse);
+        Page<ProductResponseDTO> pagedResponse = productService.getProductsByPriceBetween(minPrice, maxPrice, pageable);
+        ApiResponse<Page<ProductResponseDTO>> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Products fetched successfully", pagedResponse);
         return ResponseEntity.ok(apiResponse);
     }
 }

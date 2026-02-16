@@ -5,7 +5,6 @@ import com.example.commerce.dtos.requests.LoginDTO;
 import com.example.commerce.dtos.requests.UpdateUserDTO;
 import com.example.commerce.dtos.requests.UserRegistrationDTO;
 import com.example.commerce.dtos.responses.*;
-import com.example.commerce.errorhandlers.UnauthorizedException;
 import com.example.commerce.interfaces.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -56,7 +55,7 @@ public class UserController {
                 ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", authResponse.getRefreshToken())
                 .httpOnly(true)
                 .secure(cookieSecure)
-                .path("/")
+                .path("/api/users/public/refresh") // Restrict cookie to refresh endpoint
                 .maxAge(7 * 24 * 60 * 60)
                 .sameSite(cookieSameSite)
                 .build();
@@ -69,13 +68,8 @@ public class UserController {
 
     @PostMapping("/public/refresh")
     public ResponseEntity<ApiResponse<String>> refreshToken(
-            @CookieValue(name="refreshToken", required = false) String refreshToken, 
+            @CookieValue(name="refreshToken", required = true) String refreshToken,
             HttpServletResponse response) {
-        
-        if(refreshToken == null){
-            throw new UnauthorizedException("Refresh token is missing");
-        }
-        
         RefreshTokenResponseDTO tokenResponse = userService.validateAndReturnTokens(refreshToken);
         
         // Set new refresh token in cookie (token rotation for security)
@@ -139,18 +133,11 @@ public class UserController {
 
     @Operation(summary = "Get all users")
     @GetMapping("/admin/all")
-    public ResponseEntity<ApiResponse<PagedResponse<userSummaryDTO>>> getAllUsers(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+    public ResponseEntity<ApiResponse<Page<userSummaryDTO>>> getAllUsers(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = Pageable.ofSize(size).withPage(page);
         Page<userSummaryDTO> usersPage = userService.getAllUsers(pageable);
-        PagedResponse<userSummaryDTO> pagedResponse = new PagedResponse<>(
-                usersPage.getContent(),
-                usersPage.getNumber(),
-                (int) usersPage.getTotalElements(),
-                usersPage.getTotalPages(),
-                usersPage.isLast()
-        );
-        ApiResponse<PagedResponse<userSummaryDTO>> apiResponse =
-                new ApiResponse<>(HttpStatus.OK.value(), "Users fetched successfully", pagedResponse);
+        ApiResponse<Page<userSummaryDTO>> apiResponse =
+                new ApiResponse<>(HttpStatus.OK.value(), "Users fetched successfully", usersPage);
         return ResponseEntity.ok(apiResponse);
     }
 

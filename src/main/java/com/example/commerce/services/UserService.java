@@ -14,10 +14,13 @@ import com.example.commerce.errorhandlers.UnauthorizedException;
 import com.example.commerce.interfaces.IUserService;
 import com.example.commerce.mappers.UserMapper;
 import com.example.commerce.repositories.UserRepository;
+import com.example.commerce.specifications.UserSpecifications;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -46,7 +49,11 @@ public class UserService implements IUserService {
         this.jwtService = jwtService;
     }
 
-    @CacheEvict(value = {"userById", "userByEmail"}, allEntries = true)
+    @Caching(put = {
+        @CachePut(value = "userById", key = "#result.id"),
+        @CachePut(value = "userByEmail", key = "#result.email")
+    })
+    @CacheEvict(value = "allUsers", allEntries = true)
     public LoginResponseDTO addUser(UserRegistrationDTO userDTO){
 
         Optional<UserEntity> existingUser = userRepository.findByEmail(userDTO.getEmail());
@@ -73,6 +80,7 @@ public class UserService implements IUserService {
             );
             if(authentication.isAuthenticated()){
                 UserEntity userEntity = (UserEntity) authentication.getPrincipal();
+                //TODO: surround with an if to check if user is active or not
                 assert userEntity != null;
                 String accesstoken = jwtService.generateAccessToken(userEntity);
                 String refreshtoken = jwtService.generateRefreshToken(userEntity);
@@ -110,7 +118,8 @@ public class UserService implements IUserService {
         }
     }
 
-    @CacheEvict(value = {"userById", "userByEmail"}, allEntries = true)
+    @CachePut(value = "userById", key = "#id")
+    @CacheEvict(value = {"userByEmail", "allUsers"}, allEntries = true)
     public userSummaryDTO updateUser(Long id, @Valid UpdateUserDTO userDTO){
         UserEntity userEntity = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
@@ -127,21 +136,21 @@ public class UserService implements IUserService {
         return userMapper.toSummaryDTO(updatedUser);
     }
 
+    @Cacheable(value = "allUsers", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<userSummaryDTO> getAllUsers(Pageable pageable){
       return userRepository.findAll(pageable).map(userMapper::toSummaryDTO);
     }
     
     public Page<userSummaryDTO> searchUsers(String search, Pageable pageable) {
-        return userRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
-            search, search, search, pageable
-        ).map(userMapper::toSummaryDTO);
+        return userRepository.findAll(UserSpecifications.searchByKeyword(search), pageable)
+                .map(userMapper::toSummaryDTO);
     }
 
     public List<userSummaryDTO> getAllUsersList() {
         return userRepository.findAll().stream().map(userMapper::toSummaryDTO).toList();
     }
 
-    @CacheEvict(value = {"userById", "userByEmail"}, allEntries = true)
+    @CacheEvict(value = {"userById", "userByEmail", "allUsers"}, allEntries = true)
     public void deleteUser(Long id){
         UserEntity userEntity = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
