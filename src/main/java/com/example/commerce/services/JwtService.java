@@ -37,7 +37,7 @@ public class JwtService {
                 .subject(user.getEmail())
                 .issuedAt(new Date(System.currentTimeMillis())).expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
                 .and()
-                .signWith(getKey(accesssecretKey))
+                .signWith((SecretKey) getKey(accesssecretKey), Jwts.SIG.HS256)
                 .compact();
     }
 
@@ -50,7 +50,7 @@ public class JwtService {
                 .subject(user.getEmail())
                 .issuedAt(new Date(System.currentTimeMillis())).expiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 24 * 7))
                 .and()
-                .signWith(getKey(refreshsecretKey))
+                .signWith((SecretKey) getKey(refreshsecretKey), Jwts.SIG.HS256)
                 .compact();
     }
 

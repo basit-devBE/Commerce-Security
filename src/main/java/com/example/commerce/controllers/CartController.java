@@ -9,12 +9,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Slf4j
 @Tag(name = "Cart Management")
 @RestController
 @RequestMapping("/api/cart")
@@ -44,7 +42,6 @@ public class CartController {
             @Valid @RequestBody AddToCartDTO request,
             HttpServletRequest httpRequest) {
         Long userId = (Long) httpRequest.getAttribute("authenticatedUserId");
-        log.info("Receved UserID: {}", userId);
         CartResponseDTO cart = cartService.addToCart(userId, request);
         ApiResponse<CartResponseDTO> apiResponse = new ApiResponse<>(
                 HttpStatus.OK.value(), 

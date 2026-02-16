@@ -5,13 +5,14 @@ import com.example.commerce.dtos.requests.UpdateOrderDTO;
 import com.example.commerce.dtos.responses.ApiResponse;
 import com.example.commerce.dtos.responses.OrderResponseDTO;
 import com.example.commerce.interfaces.IOrderService;
-import com.example.commerce.utils.sorting.SortingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,11 +24,9 @@ import java.util.List;
 @RequestMapping("/api/orders")
 public class OrderController {
     private final IOrderService orderService;
-    private final SortingService sortingService;
 
-    public OrderController(IOrderService orderService, SortingService sortingService) {
+    public OrderController(IOrderService orderService) {
         this.orderService = orderService;
-        this.sortingService = sortingService;
     }
 
     @Operation(summary = "Create a new order")
@@ -46,23 +45,12 @@ public class OrderController {
     public ResponseEntity<ApiResponse<Page<OrderResponseDTO>>> getAllOrders(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size,
-            @RequestParam(value = "sortBy", required = false) String sortBy,
-            @RequestParam(value = "ascending", defaultValue = "false") boolean ascending,
-            @RequestParam(value = "algorithm", defaultValue = "MERGESORT") String algorithm
+            @RequestParam(value = "sortBy", defaultValue = "id") String sortBy,
+            @RequestParam(value = "direction", defaultValue = "DESC") String direction
     ) {
-        Pageable pageable = Pageable.ofSize(size).withPage(page);
+        Sort sort = Sort.by(Sort.Direction.fromString(direction), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
         Page<OrderResponseDTO> orders = orderService.getAllOrders(pageable);
-        
-        if (sortBy != null) {
-            List<OrderResponseDTO> orderList = orders.getContent();
-            try {
-                SortingService.OrderSortField field = SortingService.OrderSortField.valueOf(sortBy.toUpperCase());
-                SortingService.SortAlgorithm algo = SortingService.SortAlgorithm.valueOf(algorithm.toUpperCase());
-                sortingService.sortOrders(orderList, field, ascending, algo);
-            } catch (IllegalArgumentException e) {
-                // Invalid sortBy or algorithm, ignore and return unsorted
-            }
-        }
         
         ApiResponse<Page<OrderResponseDTO>> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Orders fetched successfully", orders);
         return ResponseEntity.ok(apiResponse);

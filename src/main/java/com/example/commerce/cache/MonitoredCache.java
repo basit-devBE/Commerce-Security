@@ -33,10 +33,10 @@ public class MonitoredCache implements Cache {
         
         if (value != null) {
             performanceMonitor.recordCacheHit(cacheKey);
-            log.debug("🎯 CACHE HIT: {}", cacheKey);
+            log.debug("CACHE HIT: {}", cacheKey);
         } else {
             performanceMonitor.recordCacheMiss(cacheKey);
-            log.debug("❌ CACHE MISS: {}", cacheKey);
+            log.debug("CACHE MISS: {}", cacheKey);
         }
         
         return value;
@@ -50,10 +50,10 @@ public class MonitoredCache implements Cache {
         
         if (value != null) {
             performanceMonitor.recordCacheHit(cacheKey);
-            log.debug("🎯 CACHE HIT: {}", cacheKey);
+            log.debug("CACHE HIT: {}", cacheKey);
         } else {
             performanceMonitor.recordCacheMiss(cacheKey);
-            log.debug("❌ CACHE MISS: {}", cacheKey);
+            log.debug("CACHE MISS: {}", cacheKey);
         }
         
         return value;
@@ -68,10 +68,10 @@ public class MonitoredCache implements Cache {
         ValueWrapper existing = delegate.get(key);
         if (existing != null) {
             performanceMonitor.recordCacheHit(cacheKey);
-            log.debug("🎯 CACHE HIT: {}", cacheKey);
+            log.debug("CACHE HIT: {}", cacheKey);
         } else {
             performanceMonitor.recordCacheMiss(cacheKey);
-            log.debug("❌ CACHE MISS: {}", cacheKey);
+            log.debug("CACHE MISS: {}", cacheKey);
         }
         
         return delegate.get(key, valueLoader);
