@@ -9,6 +9,7 @@ import com.example.commerce.errorhandlers.ResourceNotFoundException;
 import com.example.commerce.interfaces.ICategoryService;
 import com.example.commerce.mappers.CategoryMapper;
 import com.example.commerce.repositories.CategoryRepository;
+import com.example.commerce.specifications.CategorySpecifications;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -50,9 +51,8 @@ public class CategoryService implements ICategoryService {
     }
     
     public Page<CategoryResponseDTO> searchCategories(String search, Pageable pageable) {
-        return categoryRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
-            search, search, pageable
-        ).map(categoryMapper::toResponseDTO);
+        return categoryRepository.findAll(CategorySpecifications.searchByKeyword(search), pageable)
+            .map(categoryMapper::toResponseDTO);
     }
 
     @Cacheable(value = "categoryById", key = "#id")

@@ -11,6 +11,7 @@ import com.example.commerce.interfaces.IProductService;
 import com.example.commerce.mappers.ProductMapper;
 import com.example.commerce.repositories.CategoryRepository;
 import com.example.commerce.repositories.ProductRepository;
+import com.example.commerce.specifications.ProductSpecifications;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -198,15 +199,14 @@ public class ProductService implements IProductService {
     }
     
     public Page<ProductResponseDTO> searchProducts(String search, Pageable pageable) {
-        return productRepository.findByNameContainingIgnoreCaseOrSkuContainingIgnoreCase(
-            search, search, pageable
-        ).map(product -> {
-            ProductResponseDTO response = productMapper.toResponseDTO(product);
-            response.setCategoryName(product.getCategory().getName());
-            inventoryRepository.findByProductId(product.getId())
-                    .ifPresent(inventory -> response.setQuantity(inventory.getQuantity()));
-            return response;
-        });
+        return productRepository.findAll(ProductSpecifications.searchByKeyword(search), pageable)
+            .map(product -> {
+                ProductResponseDTO response = productMapper.toResponseDTO(product);
+                response.setCategoryName(product.getCategory().getName());
+                inventoryRepository.findByProductId(product.getId())
+                        .ifPresent(inventory -> response.setQuantity(inventory.getQuantity()));
+                return response;
+            });
     }
 }
 
