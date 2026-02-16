@@ -12,6 +12,7 @@ import com.example.commerce.interfaces.IOrderService;
 import com.example.commerce.mappers.OrderMapper;
 import com.example.commerce.repositories.*;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -45,7 +46,8 @@ public class OrderService implements IOrderService {
         this.orderMapper = orderMapper;
     }
 
-    @CacheEvict(value = {"orderById", "inventoryById", "inventoryByProductId"}, allEntries = true)
+    @CachePut(value = "orderById", key = "#result.id")
+    @CacheEvict(value = {"inventoryById", "inventoryByProductId"}, allEntries = true)
     @Transactional
     public OrderResponseDTO createOrder(AddOrderDTO addOrderDTO) {
         // Validate user exists
@@ -140,7 +142,8 @@ public class OrderService implements IOrderService {
         return buildOrderResponse(order, items);
     }
 
-    @CacheEvict(value = {"orderById", "inventoryById", "inventoryByProductId"}, allEntries = true)
+    @CachePut(value = "orderById", key = "#id")
+    @CacheEvict(value = {"inventoryById", "inventoryByProductId"}, allEntries = true)
     @Transactional
     public OrderResponseDTO updateOrderStatus(Long id, UpdateOrderDTO updateOrderDTO) {
         OrderEntity order = orderRepository.findById(id)

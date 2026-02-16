@@ -10,6 +10,7 @@ import com.example.commerce.interfaces.ICategoryService;
 import com.example.commerce.mappers.CategoryMapper;
 import com.example.commerce.repositories.CategoryRepository;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,7 +26,7 @@ public class CategoryService implements ICategoryService {
         this.categoryMapper = categoryMapper;
     }
 
-    @CacheEvict(value = "categoryById", allEntries = true)
+    @CachePut(value = "categoryById", key = "#result.id")
     public CategoryResponseDTO addCategory(AddCategoryDTO addCategoryDTO) {
         if (categoryRepository.existsByNameIgnoreCase(addCategoryDTO.getName())) {
             throw new ResourceAlreadyExists("Category with name '" + addCategoryDTO.getName() + "' already exists");
@@ -52,7 +53,7 @@ public class CategoryService implements ICategoryService {
         return categoryMapper.toResponseDTO(category);
     }
 
-    @CacheEvict(value = "categoryById", key = "#id")
+    @CachePut(value = "categoryById", key = "#id")
     public CategoryResponseDTO updateCategory(Long id, UpdateCategoryDTO updateCategoryDTO) {
         CategoryEntity existingCategory = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + id));

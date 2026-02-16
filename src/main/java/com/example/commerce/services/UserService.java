@@ -17,7 +17,9 @@ import com.example.commerce.repositories.UserRepository;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -46,7 +48,10 @@ public class UserService implements IUserService {
         this.jwtService = jwtService;
     }
 
-    @CacheEvict(value = {"userById", "userByEmail"}, allEntries = true)
+    @Caching(put = {
+        @CachePut(value = "userById", key = "#result.id"),
+        @CachePut(value = "userByEmail", key = "#result.email")
+    })
     public LoginResponseDTO addUser(UserRegistrationDTO userDTO){
 
         Optional<UserEntity> existingUser = userRepository.findByEmail(userDTO.getEmail());
@@ -111,7 +116,8 @@ public class UserService implements IUserService {
         }
     }
 
-    @CacheEvict(value = {"userById", "userByEmail"}, allEntries = true)
+    @CachePut(value = "userById", key = "#id")
+    @CacheEvict(value = "userByEmail", allEntries = true)
     public userSummaryDTO updateUser(Long id, @Valid UpdateUserDTO userDTO){
         UserEntity userEntity = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));

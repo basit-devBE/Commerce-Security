@@ -12,7 +12,9 @@ import com.example.commerce.mappers.InventoryMapper;
 import com.example.commerce.repositories.InventoryRepository;
 import com.example.commerce.repositories.ProductRepository;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -31,7 +33,10 @@ public class InventoryService implements IInventoryService {
         this.inventoryMapper = inventoryMapper;
     }
 
-    @CacheEvict(value = {"inventoryById", "inventoryByProductId"}, allEntries = true)
+    @Caching(put = {
+        @CachePut(value = "inventoryById", key = "#result.id"),
+        @CachePut(value = "inventoryByProductId", key = "#addInventoryDTO.productId")
+    })
     public InventoryResponseDTO addInventory(AddInventoryDTO addInventoryDTO) {
         // Validate product exists
         ProductEntity product = productRepository.findById(addInventoryDTO.getProductId())
@@ -77,7 +82,8 @@ public class InventoryService implements IInventoryService {
         return inventoryMapper.toResponseDTO(inventory);
     }
 
-    @CacheEvict(value = {"inventoryById", "inventoryByProductId"}, allEntries = true)
+    @CachePut(value = "inventoryById", key = "#id")
+    @CacheEvict(value = "inventoryByProductId", allEntries = true)
     public InventoryResponseDTO updateInventory(Long id, UpdateInventoryDTO updateInventoryDTO) {
         InventoryEntity existingInventory = inventoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with ID: " + id));
@@ -109,6 +115,7 @@ public class InventoryService implements IInventoryService {
         return inventoryMapper.toResponseDTO(updatedInventory);
     }
 
+    @CacheEvict(value = {"inventoryById", "inventoryByProductId"}, allEntries = true)
     public void deleteInventory(Long id) {
         InventoryEntity inventory = inventoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with ID: " + id));

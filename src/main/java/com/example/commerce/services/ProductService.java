@@ -13,6 +13,8 @@ import com.example.commerce.mappers.ProductMapper;
 import com.example.commerce.repositories.CategoryRepository;
 import com.example.commerce.repositories.ProductRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
@@ -37,6 +39,8 @@ public class ProductService implements IProductService {
         this.inventoryRepository = inventoryRepository;
     }
 
+    @CacheEvict(value = {"allProducts", "productsByCategory", "allProductsList"}, allEntries = true)
+    @CachePut(value = "productById", key = "#result.id")
     public ProductResponseDTO addProduct(AddProductDTO addProductDTO){
         if(productRepository.existsByNameIgnoreCase(addProductDTO.getName())){
             throw new ResourceAlreadyExists("Product already exists");
@@ -77,7 +81,8 @@ public class ProductService implements IProductService {
             page.isLast()
         );
     }
-        
+    
+    @Cacheable(value = "productsByCategory", key = "#categoryId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public PagedResponse<ProductResponseDTO> getProductsByCategory(Long categoryId, Pageable pageable){
         // Validate category exists
         categoryRepository.findById(categoryId)
@@ -114,7 +119,9 @@ public class ProductService implements IProductService {
         
         return response;
     }
-     // @CacheEvict(value = {"products", "productsByCategory", "productById"}, allEntries = true)
+    
+    @CacheEvict(value = {"allProducts", "productsByCategory", "allProductsList"}, allEntries = true)
+    @CachePut(value = "productById", key = "#id")
     public ProductResponseDTO updateProduct(Long id, UpdateProductDTO updateProductDTO){
         ProductEntity existingProduct = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + id));
@@ -169,7 +176,7 @@ public class ProductService implements IProductService {
             return response;
         }).toList();
     }
-    // @CacheEvict(value = {"products", "productsByCategory", "productById", "allProductsList"}, allEntries = true)
+    @CacheEvict(value = {"allProducts", "productsByCategory", "productById", "allProductsList"}, allEntries = true)
     public void deleteProduct(Long id){
         ProductEntity product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + id));
