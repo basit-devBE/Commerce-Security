@@ -3,6 +3,7 @@ package com.example.commerce.mappers;
 import com.example.commerce.dtos.requests.AddProductDTO;
 import com.example.commerce.dtos.responses.ProductResponseDTO;
 import com.example.commerce.entities.ProductEntity;
+import com.example.commerce.graphql.input.ProductInput.AddProductInput;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -20,4 +21,6 @@ public interface ProductMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     ProductEntity toEntity(AddProductDTO addProductDTO);
+    
+    AddProductDTO toDTO(AddProductInput input);
 }

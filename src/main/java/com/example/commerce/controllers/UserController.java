@@ -133,18 +133,11 @@ public class UserController {
 
     @Operation(summary = "Get all users")
     @GetMapping("/admin/all")
-    public ResponseEntity<ApiResponse<PagedResponse<userSummaryDTO>>> getAllUsers(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+    public ResponseEntity<ApiResponse<Page<userSummaryDTO>>> getAllUsers(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = Pageable.ofSize(size).withPage(page);
         Page<userSummaryDTO> usersPage = userService.getAllUsers(pageable);
-        PagedResponse<userSummaryDTO> pagedResponse = new PagedResponse<>(
-                usersPage.getContent(),
-                usersPage.getNumber(),
-                (int) usersPage.getTotalElements(),
-                usersPage.getTotalPages(),
-                usersPage.isLast()
-        );
-        ApiResponse<PagedResponse<userSummaryDTO>> apiResponse =
-                new ApiResponse<>(HttpStatus.OK.value(), "Users fetched successfully", pagedResponse);
+        ApiResponse<Page<userSummaryDTO>> apiResponse =
+                new ApiResponse<>(HttpStatus.OK.value(), "Users fetched successfully", usersPage);
         return ResponseEntity.ok(apiResponse);
     }
 

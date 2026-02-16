@@ -4,7 +4,6 @@ import com.example.commerce.dtos.requests.AddCategoryDTO;
 import com.example.commerce.dtos.requests.UpdateCategoryDTO;
 import com.example.commerce.dtos.responses.ApiResponse;
 import com.example.commerce.dtos.responses.CategoryResponseDTO;
-import com.example.commerce.dtos.responses.PagedResponse;
 import com.example.commerce.interfaces.ICategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,20 +33,13 @@ public class CategoryController {
     }
 
     @GetMapping("/public/all")
-    public ResponseEntity<ApiResponse<PagedResponse<CategoryResponseDTO>>> getAllCategories(
+    public ResponseEntity<ApiResponse<Page<CategoryResponseDTO>>> getAllCategories(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size
     ) {
         Pageable pageable = Pageable.ofSize(size).withPage(page);
         Page<CategoryResponseDTO> categories = categoryService.getAllCategories(pageable);
-        PagedResponse<CategoryResponseDTO> pagedResponse = new PagedResponse<>(
-                categories.getContent(),
-                categories.getNumber(),
-                (int) categories.getTotalElements(),
-                categories.getTotalPages(),
-                categories.isLast()
-        );
-        ApiResponse<PagedResponse<CategoryResponseDTO>> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Categories fetched successfully", pagedResponse);
+        ApiResponse<Page<CategoryResponseDTO>> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Categories fetched successfully", categories);
         return ResponseEntity.ok(apiResponse);
     }
 

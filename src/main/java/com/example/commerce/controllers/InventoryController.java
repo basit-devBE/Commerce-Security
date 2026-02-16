@@ -4,7 +4,6 @@ import com.example.commerce.dtos.requests.AddInventoryDTO;
 import com.example.commerce.dtos.requests.UpdateInventoryDTO;
 import com.example.commerce.dtos.responses.ApiResponse;
 import com.example.commerce.dtos.responses.InventoryResponseDTO;
-import com.example.commerce.dtos.responses.PagedResponse;
 import com.example.commerce.interfaces.IInventoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,20 +33,13 @@ public class InventoryController {
     }
 
     @GetMapping("/admin/all")
-    public ResponseEntity<ApiResponse<PagedResponse<InventoryResponseDTO>>> getAllInventories(
+    public ResponseEntity<ApiResponse<Page<InventoryResponseDTO>>> getAllInventories(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size
     ) {
         Pageable pageable = Pageable.ofSize(size).withPage(page);
         Page<InventoryResponseDTO> inventories = inventoryService.getAllInventories(pageable);
-        PagedResponse<InventoryResponseDTO> pagedResponse = new PagedResponse<>(
-                inventories.getContent(),
-                inventories.getNumber(),
-                (int) inventories.getTotalElements(),
-                inventories.getTotalPages(),
-                inventories.isLast()
-        );
-        ApiResponse<PagedResponse<InventoryResponseDTO>> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Inventories fetched successfully", pagedResponse);
+        ApiResponse<Page<InventoryResponseDTO>> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Inventories fetched successfully", inventories);
         return ResponseEntity.ok(apiResponse);
     }
 

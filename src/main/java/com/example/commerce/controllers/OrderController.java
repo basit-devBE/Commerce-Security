@@ -4,7 +4,6 @@ import com.example.commerce.dtos.requests.AddOrderDTO;
 import com.example.commerce.dtos.requests.UpdateOrderDTO;
 import com.example.commerce.dtos.responses.ApiResponse;
 import com.example.commerce.dtos.responses.OrderResponseDTO;
-import com.example.commerce.dtos.responses.PagedResponse;
 import com.example.commerce.interfaces.IOrderService;
 import com.example.commerce.utils.sorting.SortingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -44,7 +43,7 @@ public class OrderController {
     }
 
     @GetMapping("/admin/all")
-    public ResponseEntity<ApiResponse<PagedResponse<OrderResponseDTO>>> getAllOrders(
+    public ResponseEntity<ApiResponse<Page<OrderResponseDTO>>> getAllOrders(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size,
             @RequestParam(value = "sortBy", required = false) String sortBy,
@@ -53,9 +52,9 @@ public class OrderController {
     ) {
         Pageable pageable = Pageable.ofSize(size).withPage(page);
         Page<OrderResponseDTO> orders = orderService.getAllOrders(pageable);
-        List<OrderResponseDTO> orderList = orders.getContent();
         
         if (sortBy != null) {
+            List<OrderResponseDTO> orderList = orders.getContent();
             try {
                 SortingService.OrderSortField field = SortingService.OrderSortField.valueOf(sortBy.toUpperCase());
                 SortingService.SortAlgorithm algo = SortingService.SortAlgorithm.valueOf(algorithm.toUpperCase());
@@ -65,19 +64,12 @@ public class OrderController {
             }
         }
         
-        PagedResponse<OrderResponseDTO> pagedResponse = new PagedResponse<>(
-                orderList,
-                orders.getNumber(),
-                (int) orders.getTotalElements(),
-                orders.getTotalPages(),
-                orders.isLast()
-        );
-        ApiResponse<PagedResponse<OrderResponseDTO>> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Orders fetched successfully", pagedResponse);
+        ApiResponse<Page<OrderResponseDTO>> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Orders fetched successfully", orders);
         return ResponseEntity.ok(apiResponse);
     }
 
     @GetMapping("/user")
-    public ResponseEntity<ApiResponse<PagedResponse<OrderResponseDTO>>> getOrdersByUserId(
+    public ResponseEntity<ApiResponse<Page<OrderResponseDTO>>> getOrdersByUserId(
             HttpServletRequest httpRequest,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size
@@ -85,14 +77,7 @@ public class OrderController {
         Long authenticatedUserId = (Long) httpRequest.getAttribute("authenticatedUserId");
         Pageable pageable = Pageable.ofSize(size).withPage(page);
         Page<OrderResponseDTO> orders = orderService.getOrdersByUserId(authenticatedUserId, pageable);
-        PagedResponse<OrderResponseDTO> pagedResponse = new PagedResponse<>(
-                orders.getContent(),
-                orders.getNumber(),
-                (int) orders.getTotalElements(),
-                orders.getTotalPages(),
-                orders.isLast()
-        );
-        ApiResponse<PagedResponse<OrderResponseDTO>> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "User orders fetched successfully", pagedResponse);
+        ApiResponse<Page<OrderResponseDTO>> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "User orders fetched successfully", orders);
         return ResponseEntity.ok(apiResponse);
     }
 

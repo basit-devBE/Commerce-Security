@@ -2,7 +2,6 @@ package com.example.commerce.services;
 
 import com.example.commerce.dtos.requests.AddProductDTO;
 import com.example.commerce.dtos.requests.UpdateProductDTO;
-import com.example.commerce.dtos.responses.PagedResponse;
 import com.example.commerce.dtos.responses.ProductResponseDTO;
 import com.example.commerce.entities.CategoryEntity;
 import com.example.commerce.entities.ProductEntity;
@@ -60,46 +59,30 @@ public class ProductService implements IProductService {
     }
 
     @Cacheable(value = "allProducts", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
-    public PagedResponse<ProductResponseDTO> getAllProducts(Pageable pageable){
+    public Page<ProductResponseDTO> getAllProducts(Pageable pageable){
         log.info("Fetching all products from the db");
-        Page<ProductResponseDTO> page = productRepository.findAll(pageable)
+        return productRepository.findAll(pageable)
             .map(product -> {
                 ProductResponseDTO response = productMapper.toResponseDTO(product);
                 inventoryRepository.findByProductId(product.getId())
                         .ifPresent(inventory -> response.setQuantity(inventory.getQuantity()));
                 return response;
             });
-
-        return new PagedResponse<>(
-            page.getContent(),
-            page.getNumber(),
-            (int) page.getTotalElements(),
-            page.getTotalPages(),
-            page.isLast()
-        );
     }
     
     @Cacheable(value = "productsByCategory", key = "#categoryId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
-    public PagedResponse<ProductResponseDTO> getProductsByCategory(Long categoryId, Pageable pageable){
+    public Page<ProductResponseDTO> getProductsByCategory(Long categoryId, Pageable pageable){
         // Validate category exists
         categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + categoryId));
         
-        Page<ProductResponseDTO> page = productRepository.findByCategoryId(categoryId, pageable).map(product -> {
+        return productRepository.findByCategoryId(categoryId, pageable).map(product -> {
             ProductResponseDTO response = productMapper.toResponseDTO(product);
             // Set quantity from inventory if exists
             inventoryRepository.findByProductId(product.getId())
                     .ifPresent(inventory -> response.setQuantity(inventory.getQuantity()));
             return response;
         });
-
-        return new PagedResponse<>(
-            page.getContent(),
-            page.getNumber(),
-            (int) page.getTotalElements(),
-            page.getTotalPages(),
-            page.isLast()
-        );
     }
 
      @Cacheable(value = "productById", key = "#id")
@@ -203,8 +186,8 @@ public class ProductService implements IProductService {
                 .ifPresent(inventory -> response.setQuantity(inventory.getQuantity()));
         return response;
     }
-    public PagedResponse<ProductResponseDTO> getProductsByPriceBetween(Double minPrice, Double maxPrice, Pageable pageable){
-        Page<ProductResponseDTO> page = productRepository.findByPriceBetween(minPrice, maxPrice, pageable)
+    public Page<ProductResponseDTO> getProductsByPriceBetween(Double minPrice, Double maxPrice, Pageable pageable){
+        return productRepository.findByPriceBetween(minPrice, maxPrice, pageable)
                 .map(product -> {
                     ProductResponseDTO response = productMapper.toResponseDTO(product);
                     // Set quantity from inventory if exists
@@ -212,36 +195,18 @@ public class ProductService implements IProductService {
                             .ifPresent(inventory -> response.setQuantity(inventory.getQuantity()));
                     return response;
                 });
-
-        return new PagedResponse<>(
-            page.getContent(),
-            page.getNumber(),
-            (int) page.getTotalElements(),
-            page.getTotalPages(),
-            page.isLast()
-        );
     }
     
-    public PagedResponse<ProductResponseDTO> searchProducts(String search, Pageable pageable) {
-        Page<ProductEntity> page = productRepository.findByNameContainingIgnoreCaseOrSkuContainingIgnoreCase(
+    public Page<ProductResponseDTO> searchProducts(String search, Pageable pageable) {
+        return productRepository.findByNameContainingIgnoreCaseOrSkuContainingIgnoreCase(
             search, search, pageable
-        );
-
-        Page<ProductResponseDTO> responsePage = page.map(product -> {
+        ).map(product -> {
             ProductResponseDTO response = productMapper.toResponseDTO(product);
             response.setCategoryName(product.getCategory().getName());
             inventoryRepository.findByProductId(product.getId())
                     .ifPresent(inventory -> response.setQuantity(inventory.getQuantity()));
             return response;
         });
-
-        return new PagedResponse<>(
-            responsePage.getContent(),
-            responsePage.getNumber(),
-            (int) responsePage.getTotalElements(),
-            responsePage.getTotalPages(),
-            responsePage.isLast()
-        );
     }
 }
 
