@@ -14,7 +14,9 @@ import java.util.List;
 
 @Getter
 @Setter
-@Table(name = "carts")
+@Table(name = "carts", indexes = {
+    @Index(name = "idx_cart_user_id", columnList = "user_id")
+})
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
