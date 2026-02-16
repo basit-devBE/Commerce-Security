@@ -12,7 +12,6 @@ import com.example.commerce.mappers.ProductMapper;
 import com.example.commerce.repositories.CategoryRepository;
 import com.example.commerce.repositories.ProductRepository;
 import com.example.commerce.specifications.ProductSpecifications;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -24,7 +23,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 
-@Slf4j
 @Service
 public class ProductService implements IProductService {
     private final ProductRepository productRepository;
@@ -61,7 +59,6 @@ public class ProductService implements IProductService {
 
     @Cacheable(value = "allProducts", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<ProductResponseDTO> getAllProducts(Pageable pageable){
-        log.info("Fetching all products from the db");
         return productRepository.findAll(pageable)
             .map(product -> {
                 ProductResponseDTO response = productMapper.toResponseDTO(product);
@@ -88,7 +85,6 @@ public class ProductService implements IProductService {
 
      @Cacheable(value = "productById", key = "#id")
     public ProductResponseDTO getProductById(Long id){
-        log.info("Fetching product with ID: {}", id);
         ProductEntity product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + id));
         ProductResponseDTO response = productMapper.toResponseDTO(product);
