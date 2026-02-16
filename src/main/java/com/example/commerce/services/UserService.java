@@ -14,6 +14,7 @@ import com.example.commerce.errorhandlers.UnauthorizedException;
 import com.example.commerce.interfaces.IUserService;
 import com.example.commerce.mappers.UserMapper;
 import com.example.commerce.repositories.UserRepository;
+import com.example.commerce.specifications.UserSpecifications;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -141,9 +142,8 @@ public class UserService implements IUserService {
     }
     
     public Page<userSummaryDTO> searchUsers(String search, Pageable pageable) {
-        return userRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
-            search, search, search, pageable
-        ).map(userMapper::toSummaryDTO);
+        return userRepository.findAll(UserSpecifications.searchByKeyword(search), pageable)
+                .map(userMapper::toSummaryDTO);
     }
 
     public List<userSummaryDTO> getAllUsersList() {

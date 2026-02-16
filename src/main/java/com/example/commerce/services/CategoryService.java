@@ -27,7 +27,7 @@ public class CategoryService implements ICategoryService {
     }
 
     @CachePut(value = "categoryById", key = "#result.id")
-    @CacheEvict(value = "allCategories", allEntries = true)
+    @CacheEvict(value = {"allCategories", "allCategoriesList"}, allEntries = true)
     public CategoryResponseDTO addCategory(AddCategoryDTO addCategoryDTO) {
         if (categoryRepository.existsByNameIgnoreCase(addCategoryDTO.getName())) {
             throw new ResourceAlreadyExists("Category with name '" + addCategoryDTO.getName() + "' already exists");
@@ -40,6 +40,13 @@ public class CategoryService implements ICategoryService {
     @Cacheable(value = "allCategories", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<CategoryResponseDTO> getAllCategories(Pageable pageable) {
         return categoryRepository.findAll(pageable).map(categoryMapper::toResponseDTO);
+    }
+    
+    @Cacheable(value = "allCategoriesList")
+    public java.util.List<CategoryResponseDTO> getAllCategoriesList() {
+        return categoryRepository.findAll().stream()
+            .map(categoryMapper::toResponseDTO)
+            .toList();
     }
     
     public Page<CategoryResponseDTO> searchCategories(String search, Pageable pageable) {
@@ -56,7 +63,7 @@ public class CategoryService implements ICategoryService {
     }
 
     @CachePut(value = "categoryById", key = "#id")
-    @CacheEvict(value = "allCategories", allEntries = true)
+    @CacheEvict(value = {"allCategories", "allCategoriesList"}, allEntries = true)
     public CategoryResponseDTO updateCategory(Long id, UpdateCategoryDTO updateCategoryDTO) {
         CategoryEntity existingCategory = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + id));
@@ -81,7 +88,7 @@ public class CategoryService implements ICategoryService {
         return categoryMapper.toResponseDTO(updatedCategory);
     }
 
-    @CacheEvict(value = {"categoryById", "allCategories"}, allEntries = true)
+    @CacheEvict(value = {"categoryById", "allCategories", "allCategoriesList"}, allEntries = true)
     public void deleteCategory(Long id) {
         CategoryEntity category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + id));

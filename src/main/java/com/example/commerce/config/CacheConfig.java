@@ -29,6 +29,7 @@ public class CacheConfig {
                 // Category caches
                 "categoryById",
                 "allCategories",
+                "allCategoriesList",
                 // Inventory caches
                 "inventoryById",
                 "inventoryByProductId",

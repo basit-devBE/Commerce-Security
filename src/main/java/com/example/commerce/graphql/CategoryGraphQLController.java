@@ -34,7 +34,7 @@ public class CategoryGraphQLController {
 
     @QueryMapping
     public List<CategoryResponseDTO> allCategories() {
-        return categoryService.getAllCategories(Pageable.unpaged()).getContent();
+        return categoryService.getAllCategoriesList();
     }
 
     @QueryMapping
