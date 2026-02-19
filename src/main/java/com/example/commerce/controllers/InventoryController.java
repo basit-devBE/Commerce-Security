@@ -6,6 +6,7 @@ import com.example.commerce.dtos.responses.ApiResponse;
 import com.example.commerce.dtos.responses.InventoryResponseDTO;
 import com.example.commerce.interfaces.IInventoryService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -24,7 +25,7 @@ public class InventoryController {
         this.inventoryService = inventoryService;
     }
 
-    @Operation(summary = "Add inventory")
+    @Operation(summary = "Add inventory", security = @SecurityRequirement(name = "Bearer Authentication"))
     @PostMapping("/admin/add")
     public ResponseEntity<ApiResponse<InventoryResponseDTO>> addInventory(@Valid @RequestBody AddInventoryDTO request) {
         InventoryResponseDTO inventory = inventoryService.addInventory(request);
@@ -33,6 +34,7 @@ public class InventoryController {
     }
 
     @GetMapping("/admin/all")
+    @Operation(security = @SecurityRequirement(name = "Bearer Authentication"))
     public ResponseEntity<ApiResponse<Page<InventoryResponseDTO>>> getAllInventories(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size
@@ -44,6 +46,7 @@ public class InventoryController {
     }
 
     @GetMapping("/{id}")
+    @Operation(security = @SecurityRequirement(name = "Bearer Authentication"))
     public ResponseEntity<ApiResponse<InventoryResponseDTO>> getInventoryById(@PathVariable Long id) {
         InventoryResponseDTO inventory = inventoryService.getInventoryById(id);
         ApiResponse<InventoryResponseDTO> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Inventory fetched successfully", inventory);
@@ -51,6 +54,7 @@ public class InventoryController {
     }
 
     @GetMapping("/product/{productId}")
+    @Operation(security = @SecurityRequirement(name = "Bearer Authentication"))
     public ResponseEntity<ApiResponse<InventoryResponseDTO>> getInventoryByProductId(@PathVariable Long productId) {
         InventoryResponseDTO inventory = inventoryService.getInventoryByProductId(productId);
         ApiResponse<InventoryResponseDTO> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Inventory fetched successfully", inventory);
@@ -58,6 +62,7 @@ public class InventoryController {
     }
 
     @PutMapping("/admin/update/{id}")
+    @Operation(security = @SecurityRequirement(name = "Bearer Authentication"))
     public ResponseEntity<ApiResponse<InventoryResponseDTO>> updateInventory(
             @PathVariable Long id,
             @Valid @RequestBody UpdateInventoryDTO request) {
@@ -67,6 +72,7 @@ public class InventoryController {
     }
 
     @PatchMapping("/admin/adjust/{id}")
+    @Operation(security = @SecurityRequirement(name = "Bearer Authentication"))
     public ResponseEntity<ApiResponse<InventoryResponseDTO>> adjustInventoryQuantity(
             @PathVariable Long id,
             @RequestParam Integer quantityChange) {
@@ -76,6 +82,7 @@ public class InventoryController {
     }
 
     @DeleteMapping("/admin/{id}")
+    @Operation(security = @SecurityRequirement(name = "Bearer Authentication"))
     public ResponseEntity<ApiResponse<Void>> deleteInventory(@PathVariable Long id) {
         inventoryService.deleteInventory(id);
         ApiResponse<Void> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Inventory deleted successfully", null);

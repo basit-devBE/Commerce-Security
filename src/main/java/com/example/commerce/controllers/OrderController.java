@@ -6,6 +6,7 @@ import com.example.commerce.dtos.responses.ApiResponse;
 import com.example.commerce.dtos.responses.OrderResponseDTO;
 import com.example.commerce.interfaces.IOrderService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -29,7 +30,7 @@ public class OrderController {
         this.orderService = orderService;
     }
 
-    @Operation(summary = "Create a new order")
+    @Operation(summary = "Create a new order", security = @SecurityRequirement(name = "Bearer Authentication"))
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<OrderResponseDTO>> createOrder(
             @Valid @RequestBody AddOrderDTO request,
@@ -42,6 +43,7 @@ public class OrderController {
     }
 
     @GetMapping("/admin/all")
+    @Operation(security = @SecurityRequirement(name = "Bearer Authentication"))
     public ResponseEntity<ApiResponse<Page<OrderResponseDTO>>> getAllOrders(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size,
@@ -57,6 +59,7 @@ public class OrderController {
     }
 
     @GetMapping("/user")
+    @Operation(security = @SecurityRequirement(name = "Bearer Authentication"))
     public ResponseEntity<ApiResponse<Page<OrderResponseDTO>>> getOrdersByUserId(
             HttpServletRequest httpRequest,
             @RequestParam(value = "page", defaultValue = "0") int page,
@@ -70,6 +73,7 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
+    @Operation(security = @SecurityRequirement(name = "Bearer Authentication"))
     public ResponseEntity<ApiResponse<OrderResponseDTO>> getOrderById(@PathVariable Long id) {
         OrderResponseDTO order = orderService.getOrderById(id);
         ApiResponse<OrderResponseDTO> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Order fetched successfully", order);
@@ -77,6 +81,7 @@ public class OrderController {
     }
 
     @PutMapping("/admin/update/{id}")
+    @Operation(security = @SecurityRequirement(name = "Bearer Authentication"))
     public ResponseEntity<ApiResponse<OrderResponseDTO>> updateOrderStatus(
             @PathVariable Long id,
             @Valid @RequestBody UpdateOrderDTO request) {

@@ -7,6 +7,7 @@ import com.example.commerce.dtos.responses.ApiResponse;
 import com.example.commerce.dtos.responses.ProductResponseDTO;
 import com.example.commerce.interfaces.IProductService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -17,7 +18,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @Tag(name = "Product Management")
 @RestController
@@ -29,7 +29,7 @@ public class ProductController {
         this.productService = productService;
     }
 
-    @Operation(summary = "Add a new product")
+    @Operation(summary = "Add a new product", security = @SecurityRequirement(name = "Bearer Authentication"))
     @PostMapping("/admin/add")
     public ResponseEntity<ApiResponse<ProductResponseDTO>> addProduct(@Valid @RequestBody AddProductDTO request){
         ProductResponseDTO product = productService.addProduct(request);
@@ -57,7 +57,7 @@ public class ProductController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Get product by ID")
+    @Operation(summary = "Get product by ID", security = @SecurityRequirement(name = "Bearer Authentication"))
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ProductResponseDTO>> getProductById(@PathVariable Long id){
         ProductResponseDTO product = productService.getProductById(id);
@@ -65,7 +65,7 @@ public class ProductController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Update a product")
+    @Operation(summary = "Update a product", security = @SecurityRequirement(name = "Bearer Authentication"))
     @PutMapping("/admin/update/{id}")
     public ResponseEntity<ApiResponse<ProductResponseDTO>> updateProduct(
             @PathVariable Long id, 
@@ -75,7 +75,7 @@ public class ProductController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Delete a product")
+    @Operation(summary = "Delete a product", security = @SecurityRequirement(name = "Bearer Authentication"))
     @DeleteMapping("/admin/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Long id){
         productService.deleteProduct(id);

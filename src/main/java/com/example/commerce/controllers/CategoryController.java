@@ -6,6 +6,7 @@ import com.example.commerce.dtos.responses.ApiResponse;
 import com.example.commerce.dtos.responses.CategoryResponseDTO;
 import com.example.commerce.interfaces.ICategoryService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -24,7 +25,7 @@ public class CategoryController {
         this.categoryService = categoryService;
     }
 
-    @Operation(summary = "Add a new category")
+    @Operation(summary = "Add a new category", security = @SecurityRequirement(name = "Bearer Authentication"))
     @PostMapping("/admin/add")
     public ResponseEntity<ApiResponse<CategoryResponseDTO>> addCategory(@Valid @RequestBody AddCategoryDTO request) {
         CategoryResponseDTO category = categoryService.addCategory(request);
@@ -44,6 +45,7 @@ public class CategoryController {
     }
 
     @GetMapping("/{id}")
+    @Operation(security = @SecurityRequirement(name = "Bearer Authentication"))
     public ResponseEntity<ApiResponse<CategoryResponseDTO>> getCategoryById(@PathVariable Long id) {
         CategoryResponseDTO category = categoryService.getCategoryById(id);
         ApiResponse<CategoryResponseDTO> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Category fetched successfully", category);
@@ -51,6 +53,7 @@ public class CategoryController {
     }
 
     @PutMapping("/admin/update/{id}")
+    @Operation(security = @SecurityRequirement(name = "Bearer Authentication"))
     public ResponseEntity<ApiResponse<CategoryResponseDTO>> updateCategory(
             @PathVariable Long id,
             @Valid @RequestBody UpdateCategoryDTO request) {
@@ -60,6 +63,7 @@ public class CategoryController {
     }
 
     @DeleteMapping("/admin/{id}")
+    @Operation(security = @SecurityRequirement(name = "Bearer Authentication"))
     public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable Long id) {
         categoryService.deleteCategory(id);
         ApiResponse<Void> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Category deleted successfully", null);

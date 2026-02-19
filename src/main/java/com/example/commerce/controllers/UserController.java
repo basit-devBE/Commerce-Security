@@ -8,6 +8,7 @@ import com.example.commerce.dtos.responses.*;
 import com.example.commerce.interfaces.IUserService;
 import com.example.commerce.services.TokenBlacklistService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -119,7 +120,7 @@ public class UserController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Get authenticated user's profile")
+    @Operation(summary = "Get authenticated user's profile", security = @SecurityRequirement(name = "Bearer Authentication"))
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<userSummaryDTO>> getProfile(HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("authenticatedUserId");
@@ -128,7 +129,7 @@ public class UserController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Update authenticated user's profile")
+    @Operation(summary = "Update authenticated user's profile", security = @SecurityRequirement(name = "Bearer Authentication"))
     @PutMapping("/updateProfile")
     public ResponseEntity<ApiResponse<userSummaryDTO>> updateProfile(HttpServletRequest request, @Valid @RequestBody UpdateUserDTO updateUserDTO) {
         Long userId = (Long) request.getAttribute("authenticatedUserId");
@@ -137,7 +138,7 @@ public class UserController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Get all users")
+    @Operation(summary = "Get all users", security = @SecurityRequirement(name = "Bearer Authentication"))
     @GetMapping("/admin/all")
     public ResponseEntity<ApiResponse<Page<userSummaryDTO>>> getAllUsers(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = Pageable.ofSize(size).withPage(page);
@@ -147,7 +148,7 @@ public class UserController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Get user by ID")
+    @Operation(summary = "Get user by ID", security = @SecurityRequirement(name = "Bearer Authentication"))
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<userSummaryDTO>> getUserById(@PathVariable Long id) {
         userSummaryDTO user = userService.findUserById(id);
@@ -156,7 +157,7 @@ public class UserController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Update user details")
+    @Operation(summary = "Update user details", security = @SecurityRequirement(name = "Bearer Authentication"))
     @PutMapping("/admin/update/{id}")
     public ResponseEntity<ApiResponse<userSummaryDTO>> updateUser(@PathVariable Long id, @Valid @RequestBody UpdateUserDTO request) {
         userSummaryDTO updatedUser = userService.updateUser(id, request);
@@ -164,7 +165,7 @@ public class UserController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Delete a user")
+    @Operation(summary = "Delete a user", security = @SecurityRequirement(name = "Bearer Authentication"))
     @DeleteMapping("/admin/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
