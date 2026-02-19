@@ -4,6 +4,8 @@ package com.example.commerce.config;
 import com.example.commerce.services.CustomOAuth2UserService;
 import com.example.commerce.services.CustomUserService;
 import com.example.commerce.services.JwtService;
+import com.example.commerce.services.TokenBlacklistService;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,6 +20,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -35,10 +38,13 @@ public class SecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, JwtService jwtService, 
+    SecurityFilterChain securityFilterChain(HttpSecurity http, JwtService jwtService,
+                                           TokenBlacklistService tokenBlacklistService,
                                            CustomAuthenticationEntryPoint authenticationEntryPoint,
-                                           CustomAccessDeniedHandler accessDeniedHandler) throws Exception {
+                                           CustomAccessDeniedHandler accessDeniedHandler,
+                                           CorsConfigurationSource corsConfigurationSource) throws Exception {
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
                         auth -> auth
@@ -65,7 +71,7 @@ public class SecurityConfig {
                         .failureHandler(oAuth2AuthenticationFailure)
                 )
                 .formLogin(Customizer.withDefaults())
-                .addFilterBefore(new JwtAuthenticationFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JwtAuthenticationFilter(jwtService, tokenBlacklistService), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

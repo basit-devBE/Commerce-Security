@@ -35,8 +35,6 @@ public class ProductEntity {
     private String sku;
     @Column(nullable = false)
     private Double price;
-     @Column(nullable = false, columnDefinition = "boolean default true")
-    private boolean isAvailable = true;
     @CreationTimestamp
     private LocalDateTime createdAt;
     @UpdateTimestamp

@@ -19,7 +19,6 @@ type Product {
     sku: String!
     price: Float!
     quantity: Int
-    isAvailable: Boolean
     description: String
     createdAt: String
     updatedAt: String

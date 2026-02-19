@@ -16,7 +16,6 @@ import com.example.commerce.mappers.UserMapper;
 import com.example.commerce.repositories.UserRepository;
 import com.example.commerce.specifications.UserSpecifications;
 import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -33,7 +32,6 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@Slf4j
 public class UserService implements IUserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
@@ -70,7 +68,6 @@ public class UserService implements IUserService {
     }
 
     public AuthResponseDTO loginUser(LoginDTO loginDTO){
-        log.info("Attempting login for email: {}", loginDTO.getEmail());
         try{
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -86,13 +83,11 @@ public class UserService implements IUserService {
                 String refreshtoken = jwtService.generateRefreshToken(userEntity);
                 LoginResponseDTO loginResponseDTO = userMapper.toResponseDTO(userEntity);
                 loginResponseDTO.setToken(accesstoken);
-                log.info("Login successful for email: {}", loginDTO.getEmail());
                 return new AuthResponseDTO(loginResponseDTO, refreshtoken);
             } else {
                 throw new ResourceNotFoundException("Invalid email or password");
             }
         }catch (Exception e){
-            log.error("Login failed for email: {}. Reason: {}", loginDTO.getEmail(), e.getMessage());
             throw new ResourceNotFoundException("Invalid email or password");
         }
     }

@@ -18,8 +18,8 @@ public class MonitoredCacheManager implements CacheManager {
 
     @PostConstruct
     public void init() {
-        log.info("🚀 Cache monitoring is active - tracking hits/misses via AOP");
-        log.info("📊 View metrics at: GET /api/performance/cache-metrics");
+        log.info("Cache monitoring is active - tracking hits/misses via AOP");
+        log.info("View metrics at: GET /api/performance/cache-metrics");
     }
 
     @Override

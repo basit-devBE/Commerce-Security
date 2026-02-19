@@ -10,5 +10,4 @@ public class UpdateProductDTO {
     private String sku;
     @Positive(message = "Price must be positive")
     private Double price;
-    private Boolean isAvailable;
 }

@@ -3,6 +3,7 @@ package com.example.commerce.controllers;
 import com.example.commerce.aspects.PerformanceMonitoringAspect;
 import com.example.commerce.dtos.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +25,7 @@ public class PerformanceController {
         this.performanceAspect = performanceAspect;
     }
 
-    @Operation(summary = "Get database fetch times")
+    @Operation(summary = "Get database fetch times", security = @SecurityRequirement(name = "Bearer Authentication"))
     @GetMapping("/admin/db-metrics")
     public ResponseEntity<ApiResponse<Map<String, Map<String, Object>>>> getDbMetrics() {
         Map<String, Map<String, Object>> metrics = performanceAspect.getDbFetchTimes();
@@ -32,7 +33,7 @@ public class PerformanceController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Get cache metrics")
+    @Operation(summary = "Get cache metrics", security = @SecurityRequirement(name = "Bearer Authentication"))
     @GetMapping("/admin/cache-metrics")
     public ResponseEntity<ApiResponse<Map<String, Map<String, Object>>>> getCacheMetrics() {
         Map<String, Map<String, Object>> metrics = performanceAspect.getCacheMetrics();
@@ -40,7 +41,7 @@ public class PerformanceController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Clear performance metrics")
+    @Operation(summary = "Clear performance metrics", security = @SecurityRequirement(name = "Bearer Authentication"))
     @DeleteMapping("/admin/clear-metrics")
     public ResponseEntity<ApiResponse<Void>> clearMetrics() {
         performanceAspect.clearMetrics();

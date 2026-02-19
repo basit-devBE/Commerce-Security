@@ -6,31 +6,30 @@ import com.example.commerce.dtos.requests.UpdateProductDTO;
 import com.example.commerce.dtos.responses.ApiResponse;
 import com.example.commerce.dtos.responses.ProductResponseDTO;
 import com.example.commerce.interfaces.IProductService;
-import com.example.commerce.utils.sorting.SortingService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @Tag(name = "Product Management")
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
     private final IProductService productService;
-    private final SortingService sortingService;
 
-    public ProductController(IProductService productService, SortingService sortingService) {
+    public ProductController(IProductService productService) {
         this.productService = productService;
-        this.sortingService = sortingService;
     }
 
-    @Operation(summary = "Add a new product")
+    @Operation(summary = "Add a new product", security = @SecurityRequirement(name = "Bearer Authentication"))
     @PostMapping("/admin/add")
     public ResponseEntity<ApiResponse<ProductResponseDTO>> addProduct(@Valid @RequestBody AddProductDTO request){
         ProductResponseDTO product = productService.addProduct(request);
@@ -44,36 +43,21 @@ public class ProductController {
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size,
             @RequestParam(value = "categoryId", required = false) Long categoryId,
-            @RequestParam(value = "sortBy", required = false) String sortBy,
-            @RequestParam(value = "ascending", defaultValue = "true") boolean ascending,
-            @RequestParam(value = "algorithm", defaultValue = "QUICKSORT") String algorithm
+            @RequestParam(value = "sortBy", defaultValue = "id") String sortBy,
+            @RequestParam(value = "direction", defaultValue = "ASC") String direction
     ){
-        Pageable pageable = Pageable.ofSize(size).withPage(page);
-        Page<ProductResponseDTO> pagedResponse;
+        Sort sort = Sort.by(Sort.Direction.fromString(direction), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
         
-        if (categoryId != null) {
-            pagedResponse = productService.getProductsByCategory(categoryId, pageable);
-        } else {
-            pagedResponse = productService.getAllProducts(pageable);
-        }
-        
-        // Apply custom sorting if sortBy is specified
-        if (sortBy != null) {
-            List<ProductResponseDTO> productList = pagedResponse.getContent();
-            try {
-                SortingService.ProductSortField field = SortingService.ProductSortField.valueOf(sortBy.toUpperCase());
-                SortingService.SortAlgorithm algo = SortingService.SortAlgorithm.valueOf(algorithm.toUpperCase());
-                sortingService.sortProducts(productList, field, ascending, algo);
-            } catch (IllegalArgumentException e) {
-                // Invalid sortBy or algorithm, ignore and return unsorted
-            }
-        }
+        Page<ProductResponseDTO> pagedResponse = categoryId != null 
+            ? productService.getProductsByCategory(categoryId, pageable)
+            : productService.getAllProducts(pageable);
         
         ApiResponse<Page<ProductResponseDTO>> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Products fetched successfully", pagedResponse);
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Get product by ID")
+    @Operation(summary = "Get product by ID", security = @SecurityRequirement(name = "Bearer Authentication"))
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ProductResponseDTO>> getProductById(@PathVariable Long id){
         ProductResponseDTO product = productService.getProductById(id);
@@ -81,7 +65,7 @@ public class ProductController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Update a product")
+    @Operation(summary = "Update a product", security = @SecurityRequirement(name = "Bearer Authentication"))
     @PutMapping("/admin/update/{id}")
     public ResponseEntity<ApiResponse<ProductResponseDTO>> updateProduct(
             @PathVariable Long id, 
@@ -91,7 +75,7 @@ public class ProductController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Delete a product")
+    @Operation(summary = "Delete a product", security = @SecurityRequirement(name = "Bearer Authentication"))
     @DeleteMapping("/admin/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Long id){
         productService.deleteProduct(id);

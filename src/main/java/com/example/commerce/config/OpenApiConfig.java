@@ -1,8 +1,10 @@
 package com.example.commerce.config;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.Info;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -29,7 +31,14 @@ import org.springframework.context.annotation.Configuration;
             - Category management
             
             ## Authentication
-            Most endpoints require authentication via Bearer token in the Authorization header.
+            Most endpoints require JWT authentication via Bearer token in the Authorization header.
+            
+            **To authenticate:**
+            1. Login via `/api/users/public/login` to get your JWT token
+            2. Click the 'Authorize' button (🔒) at the top of this page
+            3. Enter: `Bearer <your-token>` (include the word 'Bearer' followed by a space)
+            4. Click 'Authorize' and 'Close'
+            
             Format: `Authorization: Bearer <token>`
             
             ## Error Handling
@@ -82,6 +91,13 @@ import org.springframework.context.annotation.Configuration;
         @Server(url = "http://localhost:8080", description = "Local Development Server"),
         @Server(url = "https://api.commercesmart.com", description = "Production Server")
     }
+)
+@SecurityScheme(
+    name = "Bearer Authentication",
+    type = SecuritySchemeType.HTTP,
+    bearerFormat = "JWT",
+    scheme = "bearer",
+    description = "Enter JWT token obtained from login endpoint"
 )
 public class OpenApiConfig {
 

@@ -6,13 +6,14 @@ import com.example.commerce.dtos.requests.UpdateUserDTO;
 import com.example.commerce.dtos.requests.UserRegistrationDTO;
 import com.example.commerce.dtos.responses.*;
 import com.example.commerce.interfaces.IUserService;
+import com.example.commerce.services.TokenBlacklistService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,9 +27,10 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "User Management")
 @RestController
 @RequestMapping("/api/users")
+@Slf4j
 public class UserController {
-    private static final Logger log = LoggerFactory.getLogger(UserController.class);
     private final IUserService userService;
+    private final TokenBlacklistService tokenBlacklistService;
     
     @Value("${cookie.secure}")
     private boolean cookieSecure;
@@ -36,8 +38,9 @@ public class UserController {
     @Value("${cookie.sameSite}")
     private String cookieSameSite;
 
-    public UserController(IUserService userService) {
+    public UserController(IUserService userService, TokenBlacklistService tokenBlacklistService) {
         this.userService = userService;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Operation(summary = "Register a new user")
@@ -55,7 +58,7 @@ public class UserController {
                 ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", authResponse.getRefreshToken())
                 .httpOnly(true)
                 .secure(cookieSecure)
-                .path("/api/users/public/refresh") // Restrict cookie to refresh endpoint
+                .path("/api/users/public/refresh")
                 .maxAge(7 * 24 * 60 * 60)
                 .sameSite(cookieSameSite)
                 .build();
@@ -72,7 +75,6 @@ public class UserController {
             HttpServletResponse response) {
         RefreshTokenResponseDTO tokenResponse = userService.validateAndReturnTokens(refreshToken);
         
-        // Set new refresh token in cookie (token rotation for security)
         ResponseCookie newRefreshTokenCookie = ResponseCookie.from("refreshToken", tokenResponse.getRefreshToken())
                 .httpOnly(true)
                 .secure(cookieSecure)
@@ -93,13 +95,18 @@ public class UserController {
 
     @Operation(summary = "Logout user")
     @PostMapping("/public/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(HttpServletResponse response) {
-        // Clear refresh token cookie
+    public ResponseEntity<ApiResponse<Void>> logout(HttpServletRequest request, HttpServletResponse response) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            log.info("Blacklisting token on logout: {}", token);
+            tokenBlacklistService.blacklistToken(token);
+        }        
         ResponseCookie clearCookie = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .path("/")
-                .maxAge(0) // Expire immediately
+                .maxAge(0) 
                 .sameSite(cookieSameSite)
                 .build();
         
@@ -113,7 +120,7 @@ public class UserController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Get authenticated user's profile")
+    @Operation(summary = "Get authenticated user's profile", security = @SecurityRequirement(name = "Bearer Authentication"))
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<userSummaryDTO>> getProfile(HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("authenticatedUserId");
@@ -122,7 +129,7 @@ public class UserController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Update authenticated user's profile")
+    @Operation(summary = "Update authenticated user's profile", security = @SecurityRequirement(name = "Bearer Authentication"))
     @PutMapping("/updateProfile")
     public ResponseEntity<ApiResponse<userSummaryDTO>> updateProfile(HttpServletRequest request, @Valid @RequestBody UpdateUserDTO updateUserDTO) {
         Long userId = (Long) request.getAttribute("authenticatedUserId");
@@ -131,7 +138,7 @@ public class UserController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Get all users")
+    @Operation(summary = "Get all users", security = @SecurityRequirement(name = "Bearer Authentication"))
     @GetMapping("/admin/all")
     public ResponseEntity<ApiResponse<Page<userSummaryDTO>>> getAllUsers(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = Pageable.ofSize(size).withPage(page);
@@ -141,7 +148,7 @@ public class UserController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Get user by ID")
+    @Operation(summary = "Get user by ID", security = @SecurityRequirement(name = "Bearer Authentication"))
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<userSummaryDTO>> getUserById(@PathVariable Long id) {
         userSummaryDTO user = userService.findUserById(id);
@@ -150,16 +157,15 @@ public class UserController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Update user details")
+    @Operation(summary = "Update user details", security = @SecurityRequirement(name = "Bearer Authentication"))
     @PutMapping("/admin/update/{id}")
     public ResponseEntity<ApiResponse<userSummaryDTO>> updateUser(@PathVariable Long id, @Valid @RequestBody UpdateUserDTO request) {
-        log.info("Updating user with Body: {}", request);
         userSummaryDTO updatedUser = userService.updateUser(id, request);
         ApiResponse<userSummaryDTO> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "User updated successfully", updatedUser);
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Delete a user")
+    @Operation(summary = "Delete a user", security = @SecurityRequirement(name = "Bearer Authentication"))
     @DeleteMapping("/admin/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);

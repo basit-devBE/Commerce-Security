@@ -6,6 +6,7 @@ import com.example.commerce.services.JwtService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -19,6 +20,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private final JwtService jwtService;
     private final UserRepository userRepository;
+
+    @Value(("${app.oauth2.redirect-uri}"))
+    private String redirectUri;
     
     public OAuth2AuthenticationSuccessHandler(JwtService jwtService, UserRepository userRepository) {
         this.jwtService = jwtService;
@@ -41,7 +45,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
         
-        String redirectUrl = UriComponentsBuilder.fromUriString("http://localhost:3000/oauth2/redirect")
+        String redirectUrl = UriComponentsBuilder.fromUriString(redirectUri)
                 .queryParam("accessToken", accessToken)
                 .queryParam("refreshToken", refreshToken)
                 .build().toUriString();

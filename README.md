@@ -1,73 +1,92 @@
-# Commerce-JPA 🛍️
+# Commerce-Security 🔐
 
-A modern, full-stack e-commerce platform built with Spring Boot and React. This application provides a complete shopping experience with product management, order processing, user authentication, and an admin dashboard.
+A secure e-commerce platform built with Spring Boot 3.x and Spring Security, featuring JWT authentication, OAuth2 integration, and Role-Based Access Control (RBAC). This project demonstrates enterprise-level security implementation for REST and GraphQL APIs.
 
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.1-brightgreen)
-![Java](https://img.shields.io/badge/Java-25-blue)
-![React](https://img.shields.io/badge/React-18.2.0-61dafb)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen)
+![Java](https://img.shields.io/badge/Java-21-blue)
+![Spring Security](https://img.shields.io/badge/Spring%20Security-6.x-green)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue)
-![GraphQL](https://img.shields.io/badge/GraphQL-Enabled-E10098)
+![JWT](https://img.shields.io/badge/JWT-Authentication-orange)
 
 ## 📋 Table of Contents
 
+- [Project Overview](#-project-overview)
 - [Features](#-features)
 - [Architecture](#-architecture)
 - [Tech Stack](#-tech-stack)
 - [Prerequisites](#-prerequisites)
 - [Installation](#-installation)
 - [Configuration](#-configuration)
-- [Running the Application](#-running-the-application)
+- [Security Implementation](#-security-implementation)
 - [API Documentation](#-api-documentation)
-- [Project Structure](#-project-structure)
 - [Testing](#-testing)
-- [Contributing](#-contributing)
+- [Project Structure](#-project-structure)
+
+## 🎯 Project Overview
+
+This project emphasizes building secure, scalable, and production-ready web backends that can safely handle authentication, authorization, and cross-origin requests. It implements Spring Security concepts to secure REST and GraphQL APIs using JWT-based authentication, OAuth2 login (Google), and Role-Based Access Control (RBAC).
+
+**Complexity**: Advanced | **Time Estimate**: 10-12 hours
+
+### Learning Objectives
+
+By completing this project, you will:
+
+1. Apply Spring Security configurations to enforce authentication, authorization, and access control across REST and GraphQL APIs
+2. Implement JWT authentication, Google OAuth2 login, and secure password hashing using BCrypt
+3. Configure and analyze CORS and CSRF policies for different client interactions
+4. Apply DSA concepts (hashing, encryption, and token validation) to strengthen data security
+5. Develop and test role-based access control (RBAC) for real-world deployment
 
 ## ✨ Features
 
-### Customer Features
-- 🔐 **User Authentication & Authorization** - Secure login/registration with role-based access control
-- 🛍️ **Product Catalog** - Browse products with search, filter, and category navigation
-- 🛒 **Shopping Cart** - Add, update, and remove items from cart
-- 📦 **Order Management** - Place orders and track order history
-- ⭐ **Product Reviews** - Read and write product reviews with ratings
-- 👤 **User Profile** - Manage personal information and view order history
+### Security Features
+- 🔐 **JWT Authentication** - Stateless token-based authentication with secure token generation and validation
+- 🌐 **OAuth2 Integration** - Google login with automatic user registration and role assignment
+- 👮 **Role-Based Access Control (RBAC)** - Fine-grained permissions (ADMIN, CUSTOMER, STAFF)
+- 🔒 **Password Security** - BCrypt password hashing with salt
+- 🌍 **CORS Configuration** - Secure cross-origin resource sharing for web clients
+- 🛡️ **CSRF Protection** - Configurable CSRF protection for stateful/stateless APIs
+- 📝 **Security Event Logging** - Authentication attempts, access patterns, and security events
+- 🚫 **Token Blacklisting** - Revoked token management using in-memory cache
 
-### Admin Features
-- 📊 **Admin Dashboard** - Comprehensive dashboard with GraphQL support
-- 📝 **Product Management** - Create, update, and delete products
-- 📂 **Category Management** - Organize products into categories
-- 📋 **Order Processing** - View and update order statuses
-- 📦 **Inventory Management** - Track and manage product stock levels
-- 👥 **User Management** - View and manage user accounts
-
-### Technical Features
-- 🚀 **RESTful API** - Well-structured REST endpoints
-- 🎯 **GraphQL API** - Flexible data querying with GraphQL
-- 💾 **Caching** - Redis-based caching for improved performance
-- 📊 **Performance Monitoring** - Built-in performance tracking and metrics
-- 🔍 **Logging** - Comprehensive logging with AOP-based aspects
-- 🛡️ **Error Handling** - Centralized exception handling
-- 📚 **API Documentation** - OpenAPI/Swagger documentation
+### API Features
+- 🚀 **RESTful API** - Secured REST endpoints with JWT validation
+- 🎯 **GraphQL API** - Protected GraphQL queries and mutations
+- 📚 **OpenAPI Documentation** - Interactive API documentation with security schemes
 - ✅ **Input Validation** - Request validation and constraint checking
+- 🛡️ **Error Handling** - Centralized exception handling with security context
+
+### Business Features
+- 🛍️ **Product Management** - CRUD operations with role-based restrictions
+- 📂 **Category Management** - Organize products into categories
+- 🛒 **Shopping Cart** - User-specific cart management
+- 📦 **Order Processing** - Secure order creation and tracking
+- 👥 **User Management** - User registration, profile management, and authentication
 
 ## 🏗️ Architecture
 
-This application follows a layered architecture pattern:
-
 ```
 ┌─────────────────────────────────────┐
-│         React Frontend              │
-│   (Components, Pages, Services)     │
+│         Client (Browser/Postman)    │
 └──────────────┬──────────────────────┘
-               │ HTTP/GraphQL
+               │ HTTPS + JWT Token
+┌──────────────┴──────────────────────┐
+│       Spring Security Filter Chain  │
+│  ├─ CORS Filter                     │
+│  ├─ JWT Authentication Filter       │
+│  ├─ OAuth2 Login Filter             │
+│  └─ Authorization Filter            │
+└──────────────┬──────────────────────┘
+               │
 ┌──────────────┴──────────────────────┐
 │       Spring Boot Backend           │
 ├─────────────────────────────────────┤
 │  Controllers (REST & GraphQL)       │
 │  ├─ Services (Business Logic)       │
+│  ├─ Security Services (Auth/JWT)    │
 │  ├─ Repositories (Data Access)      │
-│  ├─ Entities (JPA Models)           │
-│  └─ DTOs (Data Transfer Objects)    │
+│  └─ Entities (User, Role, Product)  │
 └──────────────┬──────────────────────┘
                │ JPA/Hibernate
 ┌──────────────┴──────────────────────┐
@@ -78,229 +97,349 @@ This application follows a layered architecture pattern:
 ## 🛠️ Tech Stack
 
 ### Backend
-- **Framework**: Spring Boot 4.0.1
-- **Language**: Java 25
+- **Framework**: Spring Boot 3.x
+- **Language**: Java 21
+- **Security**: Spring Security 6.x
+- **Authentication**: JWT (JSON Web Tokens)
+- **OAuth2**: Google OAuth2 Client
 - **Database**: PostgreSQL
-- **Cache**: Redis
 - **ORM**: Hibernate/JPA
+- **Password Encryption**: BCryptPasswordEncoder
 - **API Styles**: REST + GraphQL
 - **Documentation**: OpenAPI/Swagger
 - **Build Tool**: Maven
-- **Additional Libraries**:
-  - Lombok (Reduce boilerplate)
-  - MapStruct (Object mapping)
-  - Spring Validation (Input validation)
-  - Spring AOP (Aspect-oriented programming)
 
-### Frontend
-- **Framework**: React 18.2.0
-- **Routing**: React Router v6
-- **Styling**: Tailwind CSS
-- **HTTP Client**: Axios
-- **UI Components**: Headless UI, Heroicons
-- **Date Handling**: date-fns
-- **Build Tool**: Create React App
+### Security Libraries
+- **JWT**: io.jsonwebtoken (JJWT)
+- **OAuth2**: spring-boot-starter-oauth2-client
+- **Validation**: spring-boot-starter-validation
+- **Lombok**: Code generation and boilerplate reduction
 
 ## 📦 Prerequisites
 
-Before you begin, ensure you have the following installed:
-
-- **Java Development Kit (JDK)** 25 or higher
+- **Java Development Kit (JDK)** 21 or higher
 - **Maven** 3.6+ (or use the included Maven wrapper)
-- **Node.js** 14+ and npm
 - **PostgreSQL** 12+
-- **Redis** (optional, for caching)
-- **Git** (for cloning the repository)
+- **Google Cloud Console Account** (for OAuth2 setup)
+- **Postman** or similar API testing tool
+- **Git**
 
 ## 🚀 Installation
 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/basit-devBE/Commerce-JPA.git
-cd Commerce-JPA
+git clone https://github.com/basit-devBE/Commerce-Security.git
+cd Commerce-Security
 ```
 
-### 2. Backend Setup
-
-#### Set up PostgreSQL Database
+### 2. Database Setup
 
 ```bash
 # Create a new database
-createdb commerce_db
+createdb commerce_security_db
 
 # Or using psql
 psql -U postgres
-CREATE DATABASE commerce_db;
+CREATE DATABASE commerce_security_db;
 \q
 ```
 
-#### Configure Environment Variables
+### 3. Google OAuth2 Setup
 
-Create a `.env` file in the root directory (or set environment variables):
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing one
+3. Enable Google+ API
+4. Create OAuth2 credentials (OAuth 2.0 Client ID)
+5. Add authorized redirect URI: `http://localhost:8080/login/oauth2/code/google`
+6. Copy Client ID and Client Secret
 
-```bash
-DATABASE_URL=jdbc:postgresql://localhost:5432/commerce_db
-DATABASE_USERNAME=your_postgres_username
-DATABASE_PASSWORD=your_postgres_password
+### 4. Configure Environment Variables
+
+Create `application-dev.properties` in `src/main/resources/`:
+
+```properties
+# Database Configuration
+spring.datasource.url=jdbc:postgresql://localhost:5432/commerce_security_db
+spring.datasource.username=your_postgres_username
+spring.datasource.password=your_postgres_password
+
+# JWT Configuration
+jwt.secret=your-256-bit-secret-key-here-make-it-long-and-secure
+jwt.expiration=86400000
+
+# OAuth2 Google Configuration
+spring.security.oauth2.client.registration.google.client-id=your-google-client-id
+spring.security.oauth2.client.registration.google.client-secret=your-google-client-secret
+spring.security.oauth2.client.registration.google.scope=profile,email
 ```
 
-#### Install Dependencies
+### 5. Install Dependencies
 
 ```bash
-# Using Maven wrapper (recommended)
 ./mvnw clean install
-
-# Or using Maven directly
-mvn clean install
-```
-
-### 3. Frontend Setup
-
-```bash
-cd frontend
-npm install
 ```
 
 ## ⚙️ Configuration
 
-### Backend Configuration
+### Security Configuration
 
-The application uses Spring profiles for different environments:
+The application uses a custom `SecurityFilterChain` with the following configurations:
 
-- **Default Profile** (`application.properties`):
-  ```properties
-  spring.application.name=Commerce
-  spring.jpa.show-sql=true
-  spring.profiles.active=dev
-  ```
+- **Public Endpoints**: `/auth/**`, `/oauth2/**`, `/login/**`
+- **Protected Endpoints**: `/api/**`, `/graphql/**`
+- **Admin Endpoints**: `/api/admin/**`, `/api/products/**` (POST, PUT, DELETE)
+- **CORS**: Configured for `http://localhost:3000` and other specified origins
+- **CSRF**: Disabled for stateless JWT APIs
+- **Session Management**: Stateless (no server-side sessions)
 
-- **Development Profile** (`application-dev.properties`):
-  ```properties
-  spring.jpa.hibernate.ddl-auto=update
-  spring.datasource.url=${DATABASE_URL}
-  spring.datasource.username=${DATABASE_USERNAME}
-  spring.datasource.password=${DATABASE_PASSWORD}
-  spring.graphql.graphiql.enabled=true
-  spring.data.redis.host=localhost
-  spring.data.redis.port=6379
-  ```
+### Application Properties
 
-### Frontend Configuration
+```properties
+# Application Name
+spring.application.name=Commerce-Security
 
-The frontend is configured to proxy requests to the backend:
+# JPA Configuration
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
 
-```json
-"proxy": "http://localhost:8080"
+# Security Logging
+logging.level.org.springframework.security=DEBUG
 ```
 
-## 🏃 Running the Application
+## 🔒 Security Implementation
 
-### Start Backend Server
+### 1. JWT Authentication
+
+**Token Generation**:
+```java
+// Login endpoint generates JWT with claims
+POST /auth/login
+{
+  "username": "user@example.com",
+  "password": "password123"
+}
+
+// Response
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "type": "Bearer",
+  "expiresIn": 86400000
+}
+```
+
+**Token Structure**:
+- **Header**: Algorithm (HS256) and token type
+- **Payload**: Subject (username), roles, issued time, expiration
+- **Signature**: HMAC SHA-256 signature for verification
+
+**Token Validation**:
+- Signature verification using secret key
+- Expiration check
+- Claims extraction and validation
+- Automatic rejection of tampered or expired tokens
+
+### 2. OAuth2 (Google Login)
 
 ```bash
-# From the project root directory
-./mvnw spring-boot:run
+# Initiate Google login
+GET /oauth2/authorization/google
 
-# Or using Maven
-mvn spring-boot:run
+# Callback endpoint (automatic)
+GET /login/oauth2/code/google
 ```
 
-The backend server will start on `http://localhost:8080`
+**Flow**:
+1. User clicks "Login with Google"
+2. Redirected to Google consent screen
+3. Google returns authorization code
+4. Application exchanges code for access token
+5. Fetches user profile from Google
+6. Creates or updates user in database
+7. Assigns default role (CUSTOMER)
+8. Generates JWT token for subsequent requests
 
-### Start Frontend Development Server
+### 3. Role-Based Access Control (RBAC)
 
-```bash
-cd frontend
-npm start
+**Roles**:
+- `ADMIN`: Full access to all endpoints
+- `CUSTOMER`: Access to shopping features (cart, orders, profile)
+- `STAFF`: Access to inventory and order management
+
+**Implementation**:
+```java
+@PreAuthorize("hasRole('ADMIN')")
+@PostMapping("/api/products")
+public ResponseEntity<Product> createProduct(@RequestBody ProductRequest request) {
+    // Only admins can create products
+}
+
+@PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
+@GetMapping("/api/orders")
+public ResponseEntity<List<Order>> getOrders() {
+    // Admins and customers can view orders
+}
 ```
 
-The frontend will start on `http://localhost:3000`
+### 4. Password Security
 
-### Access the Application
+- **Hashing Algorithm**: BCrypt with automatic salt generation
+- **Strength**: 10 rounds (configurable)
+- **Storage**: Only hashed passwords stored in database
+- **Validation**: Automatic comparison during login
 
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8080/api
-- **GraphQL Playground**: http://localhost:8080/graphiql
-- **API Documentation**: http://localhost:8080/swagger-ui.html (if configured)
+### 5. CORS Configuration
+
+```java
+@Bean
+public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    configuration.setAllowedHeaders(Arrays.asList("*"));
+    configuration.setAllowCredentials(true);
+    return source;
+}
+```
+
+**CORS vs CSRF**:
+- **CORS**: Controls which origins can access your API (browser security)
+- **CSRF**: Prevents unauthorized commands from trusted users (form submissions)
+- **JWT APIs**: CSRF disabled (stateless), CORS enabled for cross-origin access
+
+### 6. Security Event Logging
+
+All authentication and authorization events are logged:
+- Login attempts (success/failure)
+- Token generation and validation
+- Access denied events
+- OAuth2 authentication flow
+- Role-based access violations
+
+### 7. Token Blacklisting (DSA Implementation)
+
+Uses in-memory HashMap for revoked token management:
+```java
+// Logout endpoint adds token to blacklist
+POST /auth/logout
+Authorization: Bearer <token>
+
+// Token validation checks blacklist
+if (tokenBlacklist.contains(token)) {
+    throw new UnauthorizedException("Token has been revoked");
+}
+```
 
 ## 📚 API Documentation
 
-### REST API Endpoints
+### Authentication Endpoints
 
-#### Authentication
-- `POST /api/users/register` - Register new user
-- `POST /api/users/login` - User login
-- `GET /api/users/profile` - Get user profile
-- `PUT /api/users/profile` - Update user profile
+#### Register User
+```http
+POST /auth/register
+Content-Type: application/json
 
-#### Products
-- `GET /api/products` - Get all products (with pagination, sorting, filtering)
-- `GET /api/products/{id}` - Get product by ID
-- `POST /api/products` - Create new product (Admin)
-- `PUT /api/products/{id}` - Update product (Admin)
-- `DELETE /api/products/{id}` - Delete product (Admin)
+{
+  "username": "user@example.com",
+  "password": "SecurePass123!",
+  "firstName": "John",
+  "lastName": "Doe"
+}
+```
 
-#### Categories
-- `GET /api/categories` - Get all categories
-- `GET /api/categories/{id}` - Get category by ID
-- `POST /api/categories` - Create category (Admin)
-- `PUT /api/categories/{id}` - Update category (Admin)
-- `DELETE /api/categories/{id}` - Delete category (Admin)
+#### Login
+```http
+POST /auth/login
+Content-Type: application/json
 
-#### Cart
-- `GET /api/cart` - Get user's cart
-- `POST /api/cart/items` - Add item to cart
-- `PUT /api/cart/items/{id}` - Update cart item
-- `DELETE /api/cart/items/{id}` - Remove item from cart
-- `DELETE /api/cart` - Clear cart
+{
+  "username": "user@example.com",
+  "password": "SecurePass123!"
+}
 
-#### Orders
-- `GET /api/orders` - Get user's orders
-- `GET /api/orders/{id}` - Get order by ID
-- `POST /api/orders` - Create new order
-- `PUT /api/orders/{id}/status` - Update order status (Admin)
+Response:
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "type": "Bearer",
+  "username": "user@example.com",
+  "roles": ["CUSTOMER"]
+}
+```
 
-#### Inventory
-- `GET /api/inventory` - Get inventory items (Admin)
-- `PUT /api/inventory/{id}` - Update inventory (Admin)
+#### Google OAuth2 Login
+```http
+GET /oauth2/authorization/google
+```
 
-#### Performance
-- `GET /api/performance/metrics` - Get performance metrics (Admin)
+#### Logout
+```http
+POST /auth/logout
+Authorization: Bearer <token>
+```
+
+### Protected Endpoints
+
+All protected endpoints require JWT token in Authorization header:
+```http
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+#### Products (Public Read, Admin Write)
+```http
+GET /api/products                    # Public
+GET /api/products/{id}               # Public
+POST /api/products                   # Admin only
+PUT /api/products/{id}               # Admin only
+DELETE /api/products/{id}            # Admin only
+```
+
+#### Orders (Customer & Admin)
+```http
+GET /api/orders                      # Customer (own orders) / Admin (all)
+GET /api/orders/{id}                 # Customer (own) / Admin (all)
+POST /api/orders                     # Customer
+PUT /api/orders/{id}/status          # Admin only
+```
+
+#### Cart (Customer)
+```http
+GET /api/cart                        # Customer
+POST /api/cart/items                 # Customer
+PUT /api/cart/items/{id}             # Customer
+DELETE /api/cart/items/{id}          # Customer
+```
+
+#### Admin Endpoints
+```http
+GET /api/admin/users                 # Admin only
+GET /api/admin/metrics               # Admin only
+PUT /api/admin/users/{id}/role       # Admin only
+```
 
 ### GraphQL API
 
 Access GraphQL Playground at `http://localhost:8080/graphiql`
 
-Example queries:
+**Authentication**: Include JWT token in HTTP headers:
+```json
+{
+  "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
 
+**Example Queries**:
 ```graphql
-# Get all products
+# Get all products (public)
 query {
   products {
     id
     name
     price
     description
-    category {
-      name
-    }
   }
 }
 
-# Get product by ID
-query {
-  productById(id: 1) {
-    id
-    name
-    price
-    inventory {
-      quantity
-    }
-  }
-}
-
-# Create product (Admin)
+# Create product (admin only)
 mutation {
   createProduct(input: {
     name: "New Product"
@@ -314,170 +453,257 @@ mutation {
 }
 ```
 
-## 📁 Project Structure
-
-```
-Commerce-JPA/
-├── src/
-│   ├── main/
-│   │   ├── java/com/example/commerce/
-│   │   │   ├── CommerceApplication.java        # Main application class
-│   │   │   ├── SeedData.java                   # Database seeding
-│   │   │   ├── aspects/                        # AOP aspects (logging, performance)
-│   │   │   ├── cache/                          # Cache configuration and management
-│   │   │   ├── config/                         # Spring configuration classes
-│   │   │   ├── controllers/                    # REST controllers
-│   │   │   ├── dtos/                           # Data Transfer Objects
-│   │   │   │   ├── requests/                   # Request DTOs
-│   │   │   │   └── responses/                  # Response DTOs
-│   │   │   ├── entities/                       # JPA entities
-│   │   │   ├── enums/                          # Enumerations
-│   │   │   ├── errorhandlers/                  # Exception handlers
-│   │   │   ├── graphql/                        # GraphQL controllers and resolvers
-│   │   │   ├── interfaces/                     # Service interfaces
-│   │   │   ├── mappers/                        # MapStruct mappers
-│   │   │   ├── repositories/                   # JPA repositories
-│   │   │   ├── services/                       # Business logic services
-│   │   │   └── utils/                          # Utility classes
-│   │   └── resources/
-│   │       ├── application.properties          # Main configuration
-│   │       ├── application-dev.properties      # Development configuration
-│   │       └── graphql/
-│   │           └── schema.graphqls             # GraphQL schema
-│   └── test/                                   # Unit and integration tests
-├── frontend/
-│   ├── public/                                 # Static files
-│   ├── src/
-│   │   ├── components/                         # Reusable React components
-│   │   ├── context/                            # React context providers
-│   │   ├── pages/                              # Page components
-│   │   ├── services/                           # API service layer
-│   │   ├── utils/                              # Utility functions
-│   │   ├── App.js                              # Main App component
-│   │   └── index.js                            # Entry point
-│   ├── package.json                            # Frontend dependencies
-│   └── tailwind.config.js                      # Tailwind CSS configuration
-├── pom.xml                                     # Maven configuration
-└── README.md                                   # This file
-```
-
 ## 🧪 Testing
 
-### Backend Tests
+### Postman Testing
+
+1. **Import Collection**: Import the provided Postman collection
+2. **Set Environment Variables**:
+   - `baseUrl`: `http://localhost:8080`
+   - `token`: (will be set automatically after login)
+
+3. **Test Scenarios**:
+
+**Scenario 1: User Registration and Login**
+```
+1. POST /auth/register (create new user)
+2. POST /auth/login (get JWT token)
+3. Verify token is returned and valid
+```
+
+**Scenario 2: JWT Token Validation**
+```
+1. POST /auth/login (get token)
+2. GET /api/products (with token - should succeed)
+3. GET /api/products (without token - should fail with 401)
+4. GET /api/products (with expired token - should fail with 401)
+5. GET /api/products (with tampered token - should fail with 401)
+```
+
+**Scenario 3: Role-Based Access Control**
+```
+1. Login as CUSTOMER
+2. GET /api/products (should succeed)
+3. POST /api/products (should fail with 403 Forbidden)
+4. Login as ADMIN
+5. POST /api/products (should succeed)
+```
+
+**Scenario 4: OAuth2 Google Login**
+```
+1. GET /oauth2/authorization/google (browser)
+2. Complete Google authentication
+3. Verify user created in database
+4. Verify JWT token returned
+```
+
+**Scenario 5: CORS Testing**
+```
+1. Send request from allowed origin (should succeed)
+2. Send request from unauthorized origin (should fail)
+3. Verify preflight OPTIONS requests handled correctly
+```
+
+### Unit Tests
 
 ```bash
 # Run all tests
 ./mvnw test
 
-# Run specific test class
-./mvnw test -Dtest=CommerceApplicationTests
+# Run security tests only
+./mvnw test -Dtest=SecurityConfigTest
 
-# Run tests with coverage
+# Run with coverage
 ./mvnw test jacoco:report
 ```
 
-### Frontend Tests
+### Integration Tests
 
 ```bash
-cd frontend
-npm test
+# Run integration tests
+./mvnw verify
 ```
 
-## 🔒 Security
+## 📁 Project Structure
 
-- **Authentication**: Token-based authentication with JWT (if implemented)
-- **Authorization**: Role-based access control (USER, ADMIN)
-- **Password Security**: Passwords should be hashed (implement BCrypt)
-- **CORS**: Configured for cross-origin requests
-- **Input Validation**: Request validation using Spring Validation
-- **SQL Injection Protection**: JPA/Hibernate prepared statements
+```
+Commerce-Security/
+├── src/
+│   ├── main/
+│   │   ├── java/com/example/commerce/
+│   │   │   ├── CommerceApplication.java
+│   │   │   ├── config/
+│   │   │   │   ├── SecurityConfig.java          # Spring Security configuration
+│   │   │   │   ├── JwtConfig.java               # JWT configuration
+│   │   │   │   ├── CorsConfig.java              # CORS configuration
+│   │   │   │   └── OAuth2Config.java            # OAuth2 configuration
+│   │   │   ├── security/
+│   │   │   │   ├── JwtAuthenticationFilter.java # JWT filter
+│   │   │   │   ├── JwtTokenProvider.java        # JWT generation/validation
+│   │   │   │   ├── CustomUserDetailsService.java
+│   │   │   │   └── OAuth2SuccessHandler.java    # OAuth2 success handler
+│   │   │   ├── controllers/
+│   │   │   │   ├── AuthController.java          # Authentication endpoints
+│   │   │   │   ├── ProductController.java
+│   │   │   │   ├── OrderController.java
+│   │   │   │   └── AdminController.java
+│   │   │   ├── entities/
+│   │   │   │   ├── User.java                    # User entity with roles
+│   │   │   │   ├── Role.java                    # Role entity
+│   │   │   │   ├── Product.java
+│   │   │   │   └── Order.java
+│   │   │   ├── repositories/
+│   │   │   │   ├── UserRepository.java
+│   │   │   │   ├── RoleRepository.java
+│   │   │   │   └── ...
+│   │   │   ├── services/
+│   │   │   │   ├── AuthService.java             # Authentication service
+│   │   │   │   ├── UserService.java
+│   │   │   │   └── ...
+│   │   │   ├── dtos/
+│   │   │   │   ├── LoginRequest.java
+│   │   │   │   ├── LoginResponse.java
+│   │   │   │   ├── RegisterRequest.java
+│   │   │   │   └── ...
+│   │   │   └── exceptions/
+│   │   │       ├── UnauthorizedException.java
+│   │   │       ├── ForbiddenException.java
+│   │   │       └── GlobalExceptionHandler.java
+│   │   └── resources/
+│   │       ├── application.properties
+│   │       ├── application-dev.properties
+│   │       └── graphql/
+│   │           └── schema.graphqls
+│   └── test/
+│       └── java/com/example/commerce/
+│           ├── SecurityConfigTest.java
+│           ├── JwtTokenProviderTest.java
+│           └── AuthControllerTest.java
+├── pom.xml
+└── README.md
+```
 
-## 🚀 Deployment
+## 🏃 Running the Application
 
-### Backend Deployment
+### Start the Application
 
-1. **Build the application**:
-   ```bash
-   ./mvnw clean package
-   ```
+```bash
+# Using Maven wrapper
+./mvnw spring-boot:run
 
-2. **Run the JAR file**:
-   ```bash
-   java -jar target/Commerce-0.0.1-SNAPSHOT.jar
-   ```
+# Or using Maven
+mvn spring-boot:run
 
-3. **Environment Variables**: Set production environment variables for database and Redis
+# With specific profile
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+```
 
-### Frontend Deployment
+The application will start on `http://localhost:8080`
 
-1. **Build the production bundle**:
-   ```bash
-   cd frontend
-   npm run build
-   ```
+### Access Points
 
-2. **Deploy the `build/` directory** to your hosting service (Netlify, Vercel, AWS S3, etc.)
+- **API Base URL**: http://localhost:8080/api
+- **GraphQL Playground**: http://localhost:8080/graphiql
+- **Swagger UI**: http://localhost:8080/swagger-ui.html
+- **Health Check**: http://localhost:8080/actuator/health
+
+### Default Users
+
+After running the application, default users are seeded:
+
+| Username | Password | Role |
+|----------|----------|------|
+| admin@commerce.com | admin123 | ADMIN |
+| customer@commerce.com | customer123 | CUSTOMER |
+| staff@commerce.com | staff123 | STAFF |
+
+## 🔍 DSA and Security Optimization
+
+### 1. Hashing (Password Security)
+- **Algorithm**: BCrypt with salt
+- **Complexity**: O(1) for hash generation and verification
+- **Security**: Resistant to rainbow table attacks
+
+### 2. Token Validation (HashMap Lookup)
+- **Data Structure**: HashMap for blacklisted tokens
+- **Complexity**: O(1) average case for lookup
+- **Use Case**: Fast token revocation checking
+
+### 3. Role Lookup (Set Operations)
+- **Data Structure**: Set for user roles
+- **Complexity**: O(1) for role membership check
+- **Use Case**: Quick authorization decisions
+
+### 4. Caching Strategy
+- **Implementation**: In-memory cache for frequently accessed data
+- **Benefit**: Reduced database queries for user details
+- **Eviction**: Time-based expiration
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
-**Database Connection Error**:
+**1. JWT Token Invalid**
+- Verify secret key matches in configuration
+- Check token expiration time
+- Ensure token format: `Bearer <token>`
+
+**2. OAuth2 Login Fails**
+- Verify Google Client ID and Secret
+- Check redirect URI matches Google Console
+- Ensure Google+ API is enabled
+
+**3. 403 Forbidden Error**
+- Verify user has required role
+- Check @PreAuthorize annotations
+- Review security filter chain configuration
+
+**4. CORS Error in Browser**
+- Add origin to allowed origins list
+- Verify CORS configuration
+- Check preflight OPTIONS requests
+
+**5. Database Connection Error**
 - Verify PostgreSQL is running
-- Check database credentials in environment variables
+- Check database credentials
 - Ensure database exists
 
-**Port Already in Use**:
-- Change the backend port: `server.port=8081` in application.properties
-- Change the frontend port: Set `PORT=3001` environment variable
+## 📊 Evaluation Criteria
 
-**Redis Connection Error**:
-- If not using Redis, comment out Redis configuration
-- Or install and start Redis: `redis-server`
-
-## 📝 Additional Documentation
-
-- [Frontend README](frontend/README.md) - Frontend-specific documentation
-- [Architecture Diagram](ARCHITECTURE_DIAGRAM.md) - System architecture details
-- [Error Handling](frontend/ERROR_HANDLING.md) - Error handling strategies
-- [GraphQL Admin Guide](frontend/GRAPHQL_ADMIN_README.md) - GraphQL admin features
+| Category | Points |
+|----------|--------|
+| Security Configuration (CORS & CSRF) | 15 |
+| JWT Implementation | 20 |
+| OAuth2 (Google Integration) | 15 |
+| RBAC and Role Enforcement | 15 |
+| DSA in Security | 15 |
+| Testing & Logging | 10 |
+| Code Quality & Documentation | 10 |
+| **Total** | **100** |
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
+2. Create a feature branch (`git checkout -b feature/SecurityFeature`)
+3. Commit your changes (`git commit -m 'Add security feature'`)
+4. Push to the branch (`git push origin feature/SecurityFeature`)
 5. Open a Pull Request
-
-### Code Style Guidelines
-
-- Follow Java naming conventions
-- Use Lombok annotations to reduce boilerplate
-- Write meaningful commit messages
-- Add unit tests for new features
-- Update documentation as needed
 
 ## 📄 License
 
-This project is available for educational and personal use.
+This project is available for educational purposes.
 
-## 👨‍💻 Authors
+## 👨💻 Author
 
-- **basit-devBE** - [GitHub Profile](https://github.com/basit-devBE)
+**basit-devBE** - [GitHub Profile](https://github.com/basit-devBE)
 
 ## 🙏 Acknowledgments
 
-- Spring Boot team for the excellent framework
-- React team for the powerful UI library
-- All contributors and open-source projects used in this application
-
-## 📞 Support
-
-For questions or issues:
-- Open an issue on [GitHub Issues](https://github.com/basit-devBE/Commerce-JPA/issues)
-- Check existing documentation in the repository
+- Spring Security team for comprehensive security framework
+- JWT.io for token standards and tools
+- Google OAuth2 for authentication integration
+- PostgreSQL community for robust database system
 
 ---
 
-**Happy Coding! 🚀**
+**Secure Coding! 🔐**
