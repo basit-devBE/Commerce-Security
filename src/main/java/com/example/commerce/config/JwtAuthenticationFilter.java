@@ -1,6 +1,7 @@
 package com.example.commerce.config;
 
 import com.example.commerce.services.JwtService;
+import com.example.commerce.services.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,8 +18,11 @@ import java.util.List;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter{
     private final JwtService jwtService;
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    private final TokenBlacklistService tokenBlacklistService;
+
+    public JwtAuthenticationFilter(JwtService jwtService, TokenBlacklistService tokenBlacklistService) {
         this.jwtService = jwtService;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Override
@@ -38,6 +42,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
         }
         String token = authHeader.substring(7);
         if(!jwtService.validateAccessToken(token)){
+            filterChain.doFilter(request, response);
+            return;
+        }
+        if(tokenBlacklistService.isBlacklisted(token)){
             filterChain.doFilter(request, response);
             return;
         }

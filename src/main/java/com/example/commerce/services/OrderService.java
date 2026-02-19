@@ -63,10 +63,6 @@ public class OrderService implements IOrderService {
             ProductEntity product = productRepository.findById(itemDTO.getProductId())
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + itemDTO.getProductId()));
 
-            if (!product.isAvailable()) {
-                throw new IllegalArgumentException("Product '" + product.getName() + "' is not available");
-            }
-
             // Check inventory
             InventoryEntity inventory = inventoryRepository.findByProductId(product.getId())
                     .orElseThrow(() -> new IllegalArgumentException("Product '" + product.getName() + "' is out of stock"));

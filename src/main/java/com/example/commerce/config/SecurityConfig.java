@@ -4,6 +4,8 @@ package com.example.commerce.config;
 import com.example.commerce.services.CustomOAuth2UserService;
 import com.example.commerce.services.CustomUserService;
 import com.example.commerce.services.JwtService;
+import com.example.commerce.services.TokenBlacklistService;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -36,7 +38,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, JwtService jwtService, 
+    SecurityFilterChain securityFilterChain(HttpSecurity http, JwtService jwtService,
+                                           TokenBlacklistService tokenBlacklistService,
                                            CustomAuthenticationEntryPoint authenticationEntryPoint,
                                            CustomAccessDeniedHandler accessDeniedHandler,
                                            CorsConfigurationSource corsConfigurationSource) throws Exception {
@@ -68,7 +71,7 @@ public class SecurityConfig {
                         .failureHandler(oAuth2AuthenticationFailure)
                 )
                 .formLogin(Customizer.withDefaults())
-                .addFilterBefore(new JwtAuthenticationFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JwtAuthenticationFilter(jwtService, tokenBlacklistService), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

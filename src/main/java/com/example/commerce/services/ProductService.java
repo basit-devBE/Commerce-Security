@@ -128,10 +128,6 @@ public class ProductService implements IProductService {
         if(updateProductDTO.getPrice() != null) {
             existingProduct.setPrice(updateProductDTO.getPrice());
         }
-        
-        if(updateProductDTO.getIsAvailable() != null) {
-            existingProduct.setAvailable(updateProductDTO.getIsAvailable());
-        }
 
         ProductEntity updatedProduct = productRepository.save(existingProduct);
         ProductResponseDTO response = productMapper.toResponseDTO(updatedProduct);
