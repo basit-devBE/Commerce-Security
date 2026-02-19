@@ -302,12 +302,147 @@ public CorsConfigurationSource corsConfigurationSource() {
 }
 ```
 
-**CORS vs CSRF**:
-- **CORS**: Controls which origins can access your API (browser security)
-- **CSRF**: Prevents unauthorized commands from trusted users (form submissions)
-- **JWT APIs**: CSRF disabled (stateless), CORS enabled for cross-origin access
+### 6. CSRF Protection
 
-### 6. Security Event Logging
+#### Why CSRF is Disabled for This Application
+
+This application **disables CSRF protection** because it uses **stateless JWT authentication**:
+
+```java
+// SecurityConfig.java
+http.csrf(AbstractHttpConfigurer::disable)
+```
+
+**Reasons for Disabling CSRF:**
+
+1. **Stateless Authentication**: JWT tokens are stored in client-side storage (localStorage/sessionStorage) or memory, not in cookies
+2. **No Session State**: The application doesn't maintain server-side sessions (`SessionCreationPolicy.STATELESS`)
+3. **Token-Based Security**: Each request includes the JWT in the `Authorization` header, which cannot be automatically sent by the browser in CSRF attacks
+4. **API-First Design**: The application is designed as a REST/GraphQL API consumed by JavaScript clients, not traditional form-based web pages
+
+#### CORS vs CSRF: Understanding the Difference
+
+| Aspect | CORS | CSRF |
+|--------|------|------|
+| **Purpose** | Controls which origins can access your API | Prevents unauthorized commands from authenticated users |
+| **Attack Vector** | Malicious site reading your API responses | Malicious site making requests on behalf of authenticated user |
+| **Protection Level** | Browser-level (prevents cross-origin reads) | Application-level (validates request origin) |
+| **When to Use** | Always for cross-origin API access | For cookie-based session authentication |
+| **This Application** | ✅ Enabled for frontend clients | ❌ Disabled (using JWT, not cookies) |
+
+#### When CSRF Protection Should Be Enabled
+
+CSRF protection is **required** when:
+
+1. **Cookie-Based Sessions**: Using `JSESSIONID` or session cookies for authentication
+2. **Form-Based Authentication**: Traditional login forms with server-side sessions
+3. **Browser Auto-Submit**: Cookies are automatically sent with every request
+4. **State-Changing Operations**: POST/PUT/DELETE operations that modify server state
+
+**Example Scenario Requiring CSRF:**
+```java
+// Traditional session-based authentication
+http
+    .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+    .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+    .formLogin(Customizer.withDefaults());
+```
+
+#### CSRF Attack Example (Why JWT is Safe)
+
+**Vulnerable (Cookie-Based):**
+```html
+<!-- Malicious site can trigger this because cookies are auto-sent -->
+<form action="https://yourbank.com/transfer" method="POST">
+  <input name="amount" value="10000">
+  <input name="to" value="attacker">
+</form>
+<script>document.forms[0].submit();</script>
+```
+
+**Protected (JWT-Based):**
+```javascript
+// Attacker cannot access JWT from localStorage/memory
+// Browser's same-origin policy prevents cross-origin access
+fetch('https://yourbank.com/transfer', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer ' + localStorage.getItem('token') // ❌ Blocked by browser
+  },
+  body: JSON.stringify({amount: 10000, to: 'attacker'})
+});
+```
+
+#### Security Best Practices for JWT (CSRF Alternative)
+
+1. **Store JWT Securely**:
+   - ✅ Memory (most secure, lost on refresh)
+   - ✅ SessionStorage (cleared on tab close)
+   - ⚠️ LocalStorage (persistent, vulnerable to XSS)
+   - ❌ Cookies without `httpOnly` flag
+
+2. **Use HTTPS Only**: Prevents man-in-the-middle token interception
+
+3. **Short Token Expiration**: Access tokens expire in 10 hours, refresh tokens in 7 days
+
+4. **Token Blacklisting**: Revoked tokens are tracked in-memory
+
+5. **CORS Restrictions**: Only allow trusted origins
+
+#### Demonstration: CSRF with Cookies (Educational)
+
+If this application used cookie-based authentication, CSRF protection would be configured as:
+
+```java
+@Configuration
+public class CsrfDemoConfig {
+    
+    @Bean
+    public SecurityFilterChain csrfEnabledChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+            )
+            .sessionManagement(session -> 
+                session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+            );
+        return http.build();
+    }
+}
+```
+
+**Client-Side CSRF Token Usage:**
+```javascript
+// Get CSRF token from cookie
+const csrfToken = document.cookie
+  .split('; ')
+  .find(row => row.startsWith('XSRF-TOKEN='))
+  .split('=')[1];
+
+// Include in request header
+fetch('/api/products', {
+  method: 'POST',
+  headers: {
+    'X-XSRF-TOKEN': csrfToken,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({name: 'Product'})
+});
+```
+
+#### Summary: Why This Application is Secure Without CSRF
+
+✅ **JWT in Authorization Header**: Not automatically sent by browser  
+✅ **Stateless Sessions**: No server-side session to hijack  
+✅ **CORS Protection**: Prevents unauthorized origins from accessing API  
+✅ **Token Blacklisting**: Revoked tokens cannot be reused  
+✅ **HTTPS Enforcement**: Prevents token interception  
+✅ **Short Token Lifetime**: Limits exposure window  
+
+**Conclusion**: CSRF protection is unnecessary for stateless JWT APIs but critical for cookie-based session authentication.
+
+### 7. Security Event Logging
 
 All authentication and authorization events are logged:
 - Login attempts (success/failure)
@@ -316,7 +451,7 @@ All authentication and authorization events are logged:
 - OAuth2 authentication flow
 - Role-based access violations
 
-### 7. Token Blacklisting (DSA Implementation)
+### 8. Token Blacklisting (DSA Implementation)
 
 Uses in-memory HashMap for revoked token management:
 ```java

@@ -52,9 +52,13 @@ public class SecurityConfig {
                                 .requestMatchers("/api/products/public/**",
                                         "/api/users/public/**",
                                         "/api/categories/public/**",
+                                        "/api/oauth2/**",
                                         "/login",
                                         "/oauth2/**",
-                                        "/error"
+                                        "/error",
+                                        "/swagger-ui/**",
+                                        "/v3/api-docs/**",
+                                        "/graphiql/**"
                                 )
                                 .permitAll()
                                 .anyRequest().authenticated()
