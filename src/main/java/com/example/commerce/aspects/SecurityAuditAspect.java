@@ -31,7 +31,7 @@ public class SecurityAuditAspect {
         Object[] args = joinPoint.getArgs();
         String email = args.length > 0 ? extractEmail(args[0]) : "unknown";
         
-        int attempts = failedLoginAttempts.merge(email, 1, Integer::sum);
+        int attempts = failedLoginAttempts.merge(email, 1, (oldVal, newVal) -> oldVal + newVal);
         
         if (attempts >= MAX_FAILED_ATTEMPTS) {
             log.warn("SECURITY ALERT - BRUTE FORCE DETECTED | User: {} | Attempts: {} | Time: {}", 
