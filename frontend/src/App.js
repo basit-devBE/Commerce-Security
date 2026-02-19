@@ -16,6 +16,7 @@ import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
 import Profile from './pages/Profile';
 import AdminDashboardGraphQL from './pages/AdminDashboardGraphQL';
+import OAuth2RedirectHandler from './pages/OAuth2RedirectHandler';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
               <Route path="/products" element={<Products />} />
               <Route path="/products/:id" element={<ProductDetail />} />
               <Route path="/cart" element={<Cart />} />

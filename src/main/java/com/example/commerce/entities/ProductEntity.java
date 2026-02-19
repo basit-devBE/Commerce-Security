@@ -16,7 +16,10 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "products")
+@Table(name = "products", indexes = {
+    @Index(name = "idx_product_category_id", columnList = "category_id"),
+    @Index(name = "idx_product_sku", columnList = "sku")
+})
 public class ProductEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,8 +35,6 @@ public class ProductEntity {
     private String sku;
     @Column(nullable = false)
     private Double price;
-     @Column(nullable = false, columnDefinition = "boolean default true")
-    private boolean isAvailable = true;
     @CreationTimestamp
     private LocalDateTime createdAt;
     @UpdateTimestamp

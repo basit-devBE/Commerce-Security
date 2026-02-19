@@ -98,6 +98,7 @@ const AdminDashboardGraphQL = () => {
   const [activeTab, setActiveTab] = useState('products');
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [categoriesForDropdown, setCategoriesForDropdown] = useState([]); // Separate state for dropdowns
   const [orders, setOrders] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [users, setUsers] = useState([]);
@@ -298,15 +299,9 @@ const AdminDashboardGraphQL = () => {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        const query = `
-          query {
-            allCategories { id name description }
-            allProducts { id name categoryName sku price quantity }
-          }
-        `;
-        const data = await executeGraphQL(query);
-        setCategories(data.allCategories || []);
-        setProducts(data.allProducts || []);
+        const data = await graphqlAPI.getAllCategories();
+        console.log('Fetched categories for dropdown:', data.allCategories);
+        setCategoriesForDropdown(data.allCategories || []);
       } catch (error) {
         console.error('Error fetching initial data:', error);
       }
@@ -517,6 +512,9 @@ const AdminDashboardGraphQL = () => {
       setShowAddCategoryModal(false);
       setNewCategory({ name: '', description: '' });
       setError(null);
+      // Refresh dropdown categories
+      const data = await graphqlAPI.getAllCategories();
+      setCategoriesForDropdown(data.allCategories || []);
       refreshCurrentTab();
     } catch (err) {
       console.error('Error adding category:', err);
@@ -533,6 +531,9 @@ const AdminDashboardGraphQL = () => {
       setEditingCategory(null);
       setNewCategoryData({ name: '', description: '' });
       setError(null);
+      // Refresh dropdown categories
+      const data = await graphqlAPI.getAllCategories();
+      setCategoriesForDropdown(data.allCategories || []);
       refreshCurrentTab();
     } catch (err) {
       console.error('Error updating category:', err);
@@ -547,6 +548,9 @@ const AdminDashboardGraphQL = () => {
     try {
       await graphqlAPI.deleteCategory(categoryId);
       setError(null);
+      // Refresh dropdown categories
+      const data = await graphqlAPI.getAllCategories();
+      setCategoriesForDropdown(data.allCategories || []);
       refreshCurrentTab();
     } catch (err) {
       console.error('Error deleting category:', err);
@@ -964,7 +968,7 @@ const AdminDashboardGraphQL = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Categories</option>
-              {categories.map(cat => (
+              {categoriesForDropdown.map(cat => (
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
@@ -1618,7 +1622,7 @@ const AdminDashboardGraphQL = () => {
                   className="w-full border rounded px-3 py-2"
                 >
                   <option value="">Select Category</option>
-                  {categories.map((cat) => (
+                  {categoriesForDropdown.map((cat) => (
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
                 </select>

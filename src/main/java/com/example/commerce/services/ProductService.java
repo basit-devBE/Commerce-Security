@@ -2,7 +2,6 @@ package com.example.commerce.services;
 
 import com.example.commerce.dtos.requests.AddProductDTO;
 import com.example.commerce.dtos.requests.UpdateProductDTO;
-import com.example.commerce.dtos.responses.PagedResponse;
 import com.example.commerce.dtos.responses.ProductResponseDTO;
 import com.example.commerce.entities.CategoryEntity;
 import com.example.commerce.entities.ProductEntity;
@@ -12,7 +11,9 @@ import com.example.commerce.interfaces.IProductService;
 import com.example.commerce.mappers.ProductMapper;
 import com.example.commerce.repositories.CategoryRepository;
 import com.example.commerce.repositories.ProductRepository;
-import lombok.extern.slf4j.Slf4j;
+import com.example.commerce.specifications.ProductSpecifications;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
@@ -22,7 +23,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 
-@Slf4j
 @Service
 public class ProductService implements IProductService {
     private final ProductRepository productRepository;
@@ -37,19 +37,20 @@ public class ProductService implements IProductService {
         this.inventoryRepository = inventoryRepository;
     }
 
+    @CacheEvict(value = {"allProducts", "productsByCategory", "allProductsList"}, allEntries = true)
+    @CachePut(value = "productById", key = "#result.id")
     public ProductResponseDTO addProduct(AddProductDTO addProductDTO){
         if(productRepository.existsByNameIgnoreCase(addProductDTO.getName())){
             throw new ResourceAlreadyExists("Product already exists");
         }
         CategoryEntity category = categoryRepository.findById(addProductDTO.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + addProductDTO.getCategoryId()));
+                .orElseThrow(() -> new IllegalArgumentException("Invalid category ID: " + addProductDTO.getCategoryId()));
         ProductEntity productEntity = productMapper.toEntity(addProductDTO);
         productEntity.setCategory(category);
         ProductEntity savedProduct = productRepository.save(productEntity);
         ProductResponseDTO response =  productMapper.toResponseDTO(savedProduct);
         response.setCategoryName(savedProduct.getCategory().getName());
         
-        // Set quantity from inventory if exists
         inventoryRepository.findByProductId(savedProduct.getId())
                 .ifPresent(inventory -> response.setQuantity(inventory.getQuantity()));
         
@@ -57,50 +58,33 @@ public class ProductService implements IProductService {
     }
 
     @Cacheable(value = "allProducts", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
-    public PagedResponse<ProductResponseDTO> getAllProducts(Pageable pageable){
-        log.info("Fetching all products from the db");
-        Page<ProductResponseDTO> page = productRepository.findAll(pageable)
+    public Page<ProductResponseDTO> getAllProducts(Pageable pageable){
+        return productRepository.findAll(pageable)
             .map(product -> {
                 ProductResponseDTO response = productMapper.toResponseDTO(product);
                 inventoryRepository.findByProductId(product.getId())
                         .ifPresent(inventory -> response.setQuantity(inventory.getQuantity()));
                 return response;
             });
-
-        return new PagedResponse<>(
-            page.getContent(),
-            page.getNumber(),
-            (int) page.getTotalElements(),
-            page.getTotalPages(),
-            page.isLast()
-        );
     }
-        
-    public PagedResponse<ProductResponseDTO> getProductsByCategory(Long categoryId, Pageable pageable){
+    
+    @Cacheable(value = "productsByCategory", key = "#categoryId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
+    public Page<ProductResponseDTO> getProductsByCategory(Long categoryId, Pageable pageable){
         // Validate category exists
         categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + categoryId));
         
-        Page<ProductResponseDTO> page = productRepository.findByCategoryId(categoryId, pageable).map(product -> {
+        return productRepository.findByCategoryId(categoryId, pageable).map(product -> {
             ProductResponseDTO response = productMapper.toResponseDTO(product);
             // Set quantity from inventory if exists
             inventoryRepository.findByProductId(product.getId())
                     .ifPresent(inventory -> response.setQuantity(inventory.getQuantity()));
             return response;
         });
-
-        return new PagedResponse<>(
-            page.getContent(),
-            page.getNumber(),
-            (int) page.getTotalElements(),
-            page.getTotalPages(),
-            page.isLast()
-        );
     }
 
      @Cacheable(value = "productById", key = "#id")
     public ProductResponseDTO getProductById(Long id){
-        log.info("Fetching product with ID: {}", id);
         ProductEntity product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + id));
         ProductResponseDTO response = productMapper.toResponseDTO(product);
@@ -112,7 +96,9 @@ public class ProductService implements IProductService {
         
         return response;
     }
-     // @CacheEvict(value = {"products", "productsByCategory", "productById"}, allEntries = true)
+    
+    @CacheEvict(value = {"allProducts", "productsByCategory", "allProductsList"}, allEntries = true)
+    @CachePut(value = "productById", key = "#id")
     public ProductResponseDTO updateProduct(Long id, UpdateProductDTO updateProductDTO){
         ProductEntity existingProduct = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + id));
@@ -131,7 +117,7 @@ public class ProductService implements IProductService {
         
         if(updateProductDTO.getCategoryId() != null) {
             CategoryEntity category = categoryRepository.findById(updateProductDTO.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + updateProductDTO.getCategoryId()));
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid category ID: " + updateProductDTO.getCategoryId()));
             existingProduct.setCategory(category);
         }
         
@@ -141,10 +127,6 @@ public class ProductService implements IProductService {
         
         if(updateProductDTO.getPrice() != null) {
             existingProduct.setPrice(updateProductDTO.getPrice());
-        }
-        
-        if(updateProductDTO.getIsAvailable() != null) {
-            existingProduct.setAvailable(updateProductDTO.getIsAvailable());
         }
 
         ProductEntity updatedProduct = productRepository.save(existingProduct);
@@ -167,7 +149,7 @@ public class ProductService implements IProductService {
             return response;
         }).toList();
     }
-    // @CacheEvict(value = {"products", "productsByCategory", "productById", "allProductsList"}, allEntries = true)
+    @CacheEvict(value = {"allProducts", "productsByCategory", "productById", "allProductsList"}, allEntries = true)
     public void deleteProduct(Long id){
         ProductEntity product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + id));
@@ -197,8 +179,8 @@ public class ProductService implements IProductService {
                 .ifPresent(inventory -> response.setQuantity(inventory.getQuantity()));
         return response;
     }
-    public PagedResponse<ProductResponseDTO> getProductsByPriceBetween(Double minPrice, Double maxPrice, Pageable pageable){
-        Page<ProductResponseDTO> page = productRepository.findByPriceBetween(minPrice, maxPrice, pageable)
+    public Page<ProductResponseDTO> getProductsByPriceBetween(Double minPrice, Double maxPrice, Pageable pageable){
+        return productRepository.findByPriceBetween(minPrice, maxPrice, pageable)
                 .map(product -> {
                     ProductResponseDTO response = productMapper.toResponseDTO(product);
                     // Set quantity from inventory if exists
@@ -206,36 +188,17 @@ public class ProductService implements IProductService {
                             .ifPresent(inventory -> response.setQuantity(inventory.getQuantity()));
                     return response;
                 });
-
-        return new PagedResponse<>(
-            page.getContent(),
-            page.getNumber(),
-            (int) page.getTotalElements(),
-            page.getTotalPages(),
-            page.isLast()
-        );
     }
     
-    public PagedResponse<ProductResponseDTO> searchProducts(String search, Pageable pageable) {
-        Page<ProductEntity> page = productRepository.findByNameContainingIgnoreCaseOrSkuContainingIgnoreCase(
-            search, search, pageable
-        );
-
-        Page<ProductResponseDTO> responsePage = page.map(product -> {
-            ProductResponseDTO response = productMapper.toResponseDTO(product);
-            response.setCategoryName(product.getCategory().getName());
-            inventoryRepository.findByProductId(product.getId())
-                    .ifPresent(inventory -> response.setQuantity(inventory.getQuantity()));
-            return response;
-        });
-
-        return new PagedResponse<>(
-            responsePage.getContent(),
-            responsePage.getNumber(),
-            (int) responsePage.getTotalElements(),
-            responsePage.getTotalPages(),
-            responsePage.isLast()
-        );
+    public Page<ProductResponseDTO> searchProducts(String search, Pageable pageable) {
+        return productRepository.findAll(ProductSpecifications.searchByKeyword(search), pageable)
+            .map(product -> {
+                ProductResponseDTO response = productMapper.toResponseDTO(product);
+                response.setCategoryName(product.getCategory().getName());
+                inventoryRepository.findByProductId(product.getId())
+                        .ifPresent(inventory -> response.setQuantity(inventory.getQuantity()));
+                return response;
+            });
     }
 }
 

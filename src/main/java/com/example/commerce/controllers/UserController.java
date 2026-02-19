@@ -1,41 +1,50 @@
 package com.example.commerce.controllers;
 
 
-import com.example.commerce.config.RequiresRole;
 import com.example.commerce.dtos.requests.LoginDTO;
 import com.example.commerce.dtos.requests.UpdateUserDTO;
 import com.example.commerce.dtos.requests.UserRegistrationDTO;
-import com.example.commerce.dtos.responses.ApiResponse;
-import com.example.commerce.dtos.responses.LoginResponseDTO;
-import com.example.commerce.dtos.responses.PagedResponse;
-import com.example.commerce.dtos.responses.userSummaryDTO;
-import com.example.commerce.enums.UserRole;
+import com.example.commerce.dtos.responses.*;
 import com.example.commerce.interfaces.IUserService;
+import com.example.commerce.services.TokenBlacklistService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 
 @Tag(name = "User Management")
 @RestController
 @RequestMapping("/api/users")
+@Slf4j
 public class UserController {
-    private static final Logger log = LoggerFactory.getLogger(UserController.class);
     private final IUserService userService;
+    private final TokenBlacklistService tokenBlacklistService;
+    
+    @Value("${cookie.secure}")
+    private boolean cookieSecure;
+    
+    @Value("${cookie.sameSite}")
+    private String cookieSameSite;
 
-    public UserController(IUserService userService) {
+    public UserController(IUserService userService, TokenBlacklistService tokenBlacklistService) {
         this.userService = userService;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Operation(summary = "Register a new user")
-    @PostMapping("/register")
+    @PostMapping("/public/register")
     public ResponseEntity<ApiResponse<LoginResponseDTO>> registerUser(@Valid @RequestBody UserRegistrationDTO request) {
         LoginResponseDTO userResponseDTO = userService.addUser(request);
         ApiResponse<LoginResponseDTO> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "User registered successfully", userResponseDTO);
@@ -43,14 +52,75 @@ public class UserController {
     }
 
     @Operation(summary = "User login")
-    @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponseDTO>> loginUser(@Valid @RequestBody LoginDTO request) {
-        LoginResponseDTO user = userService.loginUser(request);
-        ApiResponse<LoginResponseDTO> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "User logged in successfully", user);
+    @PostMapping("/public/login")
+    public ResponseEntity<ApiResponse<LoginResponseDTO>> loginUser(@Valid @RequestBody LoginDTO request, HttpServletResponse response) {
+        AuthResponseDTO authResponse = userService.loginUser(request);
+                ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", authResponse.getRefreshToken())
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/api/users/public/refresh")
+                .maxAge(7 * 24 * 60 * 60)
+                .sameSite(cookieSameSite)
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
+
+        ApiResponse<LoginResponseDTO> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "User logged in successfully", authResponse.getUser());
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Get authenticated user's profile")
+    @PostMapping("/public/refresh")
+    public ResponseEntity<ApiResponse<String>> refreshToken(
+            @CookieValue(name="refreshToken", required = true) String refreshToken,
+            HttpServletResponse response) {
+        RefreshTokenResponseDTO tokenResponse = userService.validateAndReturnTokens(refreshToken);
+        
+        ResponseCookie newRefreshTokenCookie = ResponseCookie.from("refreshToken", tokenResponse.getRefreshToken())
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/")
+                .maxAge(7 * 24 * 60 * 60)
+                .sameSite(cookieSameSite)
+                .build();
+        
+        response.addHeader(HttpHeaders.SET_COOKIE, newRefreshTokenCookie.toString());
+        
+        ApiResponse<String> apiResponse = new ApiResponse<>(
+            HttpStatus.OK.value(), 
+            "Access token refreshed successfully", 
+            tokenResponse.getAccessToken()
+        );
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @Operation(summary = "Logout user")
+    @PostMapping("/public/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(HttpServletRequest request, HttpServletResponse response) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            log.info("Blacklisting token on logout: {}", token);
+            tokenBlacklistService.blacklistToken(token);
+        }        
+        ResponseCookie clearCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/")
+                .maxAge(0) 
+                .sameSite(cookieSameSite)
+                .build();
+        
+        response.addHeader(HttpHeaders.SET_COOKIE, clearCookie.toString());
+        
+        ApiResponse<Void> apiResponse = new ApiResponse<>(
+            HttpStatus.OK.value(), 
+            "Logged out successfully", 
+            null
+        );
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @Operation(summary = "Get authenticated user's profile", security = @SecurityRequirement(name = "Bearer Authentication"))
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<userSummaryDTO>> getProfile(HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("authenticatedUserId");
@@ -59,7 +129,7 @@ public class UserController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Update authenticated user's profile")
+    @Operation(summary = "Update authenticated user's profile", security = @SecurityRequirement(name = "Bearer Authentication"))
     @PutMapping("/updateProfile")
     public ResponseEntity<ApiResponse<userSummaryDTO>> updateProfile(HttpServletRequest request, @Valid @RequestBody UpdateUserDTO updateUserDTO) {
         Long userId = (Long) request.getAttribute("authenticatedUserId");
@@ -68,45 +138,35 @@ public class UserController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Get all users")
-    @RequiresRole(UserRole.ADMIN)
-    @GetMapping("/all")
-    public ResponseEntity<ApiResponse<PagedResponse<userSummaryDTO>>> getAllUsers(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+    @Operation(summary = "Get all users", security = @SecurityRequirement(name = "Bearer Authentication"))
+    @GetMapping("/admin/all")
+    public ResponseEntity<ApiResponse<Page<userSummaryDTO>>> getAllUsers(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = Pageable.ofSize(size).withPage(page);
         Page<userSummaryDTO> usersPage = userService.getAllUsers(pageable);
-        PagedResponse<userSummaryDTO> pagedResponse = new PagedResponse<>(
-                usersPage.getContent(),
-                usersPage.getNumber(),
-                (int) usersPage.getTotalElements(),
-                usersPage.getTotalPages(),
-                usersPage.isLast()
-        );
-        ApiResponse<PagedResponse<userSummaryDTO>> apiResponse =
-                new ApiResponse<>(HttpStatus.OK.value(), "Users fetched successfully", pagedResponse);
+        ApiResponse<Page<userSummaryDTO>> apiResponse =
+                new ApiResponse<>(HttpStatus.OK.value(), "Users fetched successfully", usersPage);
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Get user by ID")
+    @Operation(summary = "Get user by ID", security = @SecurityRequirement(name = "Bearer Authentication"))
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<userSummaryDTO>> getUserById(@PathVariable Long id) {
         userSummaryDTO user = userService.findUserById(id);
         ApiResponse<userSummaryDTO> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "User fetched successfully", user);
+
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Update user details")
-    @RequiresRole(UserRole.ADMIN)
-    @PutMapping("/update/{id}")
+    @Operation(summary = "Update user details", security = @SecurityRequirement(name = "Bearer Authentication"))
+    @PutMapping("/admin/update/{id}")
     public ResponseEntity<ApiResponse<userSummaryDTO>> updateUser(@PathVariable Long id, @Valid @RequestBody UpdateUserDTO request) {
-        log.info("Updating user with Body: {}", request);
         userSummaryDTO updatedUser = userService.updateUser(id, request);
         ApiResponse<userSummaryDTO> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "User updated successfully", updatedUser);
         return ResponseEntity.ok(apiResponse);
     }
 
-    @Operation(summary = "Delete a user")
-    @RequiresRole(UserRole.ADMIN)
-    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a user", security = @SecurityRequirement(name = "Bearer Authentication"))
+    @DeleteMapping("/admin/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         ApiResponse<Void> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "User deleted successfully", null);

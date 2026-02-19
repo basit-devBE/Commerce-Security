@@ -57,10 +57,6 @@ public class CartService implements ICartService {
         ProductEntity product = productRepository.findById(addToCartDTO.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + addToCartDTO.getProductId()));
         
-        if (!product.isAvailable()) {
-            throw new IllegalArgumentException("Product '" + product.getName() + "' is not available");
-        }
-
         // Check if product already in cart
         CartItemEntity existingItem = cart.getItems().stream()
                 .filter(item -> item.getProduct().getId().equals(addToCartDTO.getProductId()))

@@ -25,16 +25,22 @@ public class CacheConfig {
                 "allProductsList",
                 "productById",
                 "productByName",
+                "productsByCategory",
                 // Category caches
                 "categoryById",
+                "allCategories",
+                "allCategoriesList",
                 // Inventory caches
                 "inventoryById",
                 "inventoryByProductId",
+                "allInventories",
                 // Order caches
                 "orderById",
+                "allOrders",
                 // User caches
                 "userById",
                 "userByEmail",
+                "allUsers",
                 // Cart caches
                 "cartByUserId"
         );

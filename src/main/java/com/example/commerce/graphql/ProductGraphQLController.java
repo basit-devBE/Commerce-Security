@@ -2,12 +2,13 @@ package com.example.commerce.graphql;
 
 import com.example.commerce.dtos.requests.AddProductDTO;
 import com.example.commerce.dtos.responses.GraphQLPagedResponse;
-import com.example.commerce.dtos.responses.PagedResponse;
 import com.example.commerce.dtos.responses.ProductResponseDTO;
 import com.example.commerce.graphql.input.PaginationInput;
 import com.example.commerce.graphql.input.ProductInput.AddProductInput;
 import com.example.commerce.graphql.utils.GraphQLResponseMapper;
+import com.example.commerce.mappers.ProductMapper;
 import com.example.commerce.services.ProductService;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -22,13 +23,14 @@ import java.util.List;
 public class ProductGraphQLController {
     private final ProductService productService;
     private final GraphQLResponseMapper responseMapper;
+    private final ProductMapper productMapper;
 
-    public ProductGraphQLController(ProductService productService, GraphQLResponseMapper responseMapper) {
+    public ProductGraphQLController(ProductService productService, GraphQLResponseMapper responseMapper, ProductMapper productMapper) {
         this.productService = productService;
         this.responseMapper = responseMapper;
+        this.productMapper = productMapper;
     }
 
-    // ==================== QUERIES ====================
 
     @QueryMapping
     public List<ProductResponseDTO> allProducts() {
@@ -59,27 +61,22 @@ public class ProductGraphQLController {
         Sort sort = sortDir.equalsIgnoreCase("DESC") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
         
-        PagedResponse<ProductResponseDTO> pagedResponse;
+        Page<ProductResponseDTO> productsPage;
         if (search != null && !search.isBlank()) {
-            pagedResponse = productService.searchProducts(search, pageable);
+            productsPage = productService.searchProducts(search, pageable);
         } else if (categoryId != null) {
-            pagedResponse = productService.getProductsByCategory(categoryId, pageable);
+            productsPage = productService.getProductsByCategory(categoryId, pageable);
         } else {
-            pagedResponse = productService.getAllProducts(pageable);
+            productsPage = productService.getAllProducts(pageable);
         }
         
-        return responseMapper.toGraphQLPagedResponse(pagedResponse);
+        return responseMapper.toGraphQLPagedResponse(productsPage);
     }
 
-    // ==================== MUTATIONS ====================
 
     @MutationMapping
     public ProductResponseDTO addProduct(@Argument AddProductInput input) {
-        AddProductDTO dto = new AddProductDTO();
-        dto.setName(input.name());
-        dto.setCategoryId(input.categoryId());
-        dto.setSku(input.sku());
-        dto.setPrice(input.price());
+        AddProductDTO dto = productMapper.toDTO(input);
         return productService.addProduct(dto);
     }
 

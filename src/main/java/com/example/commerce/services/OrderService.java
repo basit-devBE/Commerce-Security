@@ -12,6 +12,7 @@ import com.example.commerce.interfaces.IOrderService;
 import com.example.commerce.mappers.OrderMapper;
 import com.example.commerce.repositories.*;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -45,68 +46,84 @@ public class OrderService implements IOrderService {
         this.orderMapper = orderMapper;
     }
 
-    @CacheEvict(value = {"orderById", "inventoryById", "inventoryByProductId"}, allEntries = true)
+    @CachePut(value = "orderById", key = "#result.id")
+    @CacheEvict(value = {"inventoryById", "inventoryByProductId", "allOrders"}, allEntries = true)
     @Transactional
     public OrderResponseDTO createOrder(AddOrderDTO addOrderDTO) {
-        // Validate user exists
-        UserEntity user = userRepository.findById(addOrderDTO.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + addOrderDTO.getUserId()));
+        UserEntity user = validateUser(addOrderDTO.getUserId());
+        List<OrderItemsEntity> orderItems = processOrderItems(addOrderDTO.getItems());
+        double totalAmount = calculateTotalAmount(orderItems);
+        
+        OrderEntity savedOrder = saveOrder(user, totalAmount);
+        List<OrderItemsEntity> savedItems = saveOrderItems(orderItems, savedOrder);
+        
+        return buildOrderResponse(savedOrder, savedItems);
+    }
 
-        // Calculate total amount, validate products and check inventory
-        double totalAmount = 0.0;
+    private UserEntity validateUser(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+    }
+
+    private List<OrderItemsEntity> processOrderItems(List<OrderItemDTO> itemDTOs) {
         List<OrderItemsEntity> orderItems = new ArrayList<>();
         List<InventoryEntity> inventoriesToUpdate = new ArrayList<>();
 
-        for (OrderItemDTO itemDTO : addOrderDTO.getItems()) {
+        for (OrderItemDTO itemDTO : itemDTOs) {
             ProductEntity product = productRepository.findById(itemDTO.getProductId())
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + itemDTO.getProductId()));
 
-            if (!product.isAvailable()) {
-                throw new IllegalArgumentException("Product '" + product.getName() + "' is not available");
-            }
-
-            // Check inventory
-            InventoryEntity inventory = inventoryRepository.findByProductId(product.getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Product '" + product.getName() + "' is out of stock"));
-
-            if (inventory.getQuantity() < itemDTO.getQuantity()) {
-                throw new IllegalArgumentException("Product '" + product.getName() + "' is out of stock");
-            }
-
-            // Reduce inventory quantity
-            inventory.setQuantity(inventory.getQuantity() - itemDTO.getQuantity());
+            InventoryEntity inventory = validateAndUpdateInventory(product, itemDTO.getQuantity());
             inventoriesToUpdate.add(inventory);
 
-            double itemTotal = product.getPrice() * itemDTO.getQuantity();
-            totalAmount += itemTotal;
-
-            OrderItemsEntity orderItem = new OrderItemsEntity();
-            orderItem.setProduct(product);
-            orderItem.setQuantity(itemDTO.getQuantity());
-            orderItem.setTotalPrice(itemTotal);
+            OrderItemsEntity orderItem = createOrderItem(product, itemDTO.getQuantity());
             orderItems.add(orderItem);
         }
 
-        // Update all inventories
         inventoryRepository.saveAll(inventoriesToUpdate);
+        return orderItems;
+    }
 
-        // Create and save order
+    private InventoryEntity validateAndUpdateInventory(ProductEntity product, Integer quantity) {
+        InventoryEntity inventory = inventoryRepository.findByProductId(product.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Product '" + product.getName() + "' is out of stock"));
+
+        if (inventory.getQuantity() < quantity) {
+            throw new IllegalArgumentException("Product '" + product.getName() + "' is out of stock");
+        }
+
+        inventory.setQuantity(inventory.getQuantity() - quantity);
+        return inventory;
+    }
+
+    private OrderItemsEntity createOrderItem(ProductEntity product, Integer quantity) {
+        OrderItemsEntity orderItem = new OrderItemsEntity();
+        orderItem.setProduct(product);
+        orderItem.setQuantity(quantity);
+        orderItem.setTotalPrice(product.getPrice() * quantity);
+        return orderItem;
+    }
+
+    private double calculateTotalAmount(List<OrderItemsEntity> orderItems) {
+        return orderItems.stream()
+                .mapToDouble(OrderItemsEntity::getTotalPrice)
+                .sum();
+    }
+
+    private OrderEntity saveOrder(UserEntity user, double totalAmount) {
         OrderEntity order = new OrderEntity();
         order.setUser(user);
         order.setTotalAmount(totalAmount);
         order.setStatus(OrderStatus.PENDING);
-        OrderEntity savedOrder = orderRepository.save(order);
-
-        // Save order items
-        for (OrderItemsEntity item : orderItems) {
-            item.setOrder(savedOrder);
-        }
-        List<OrderItemsEntity> savedItems = orderItemsRepository.saveAll(orderItems);
-
-        // Build response
-        return buildOrderResponse(savedOrder, savedItems);
+        return orderRepository.save(order);
     }
 
+    private List<OrderItemsEntity> saveOrderItems(List<OrderItemsEntity> orderItems, OrderEntity savedOrder) {
+        orderItems.forEach(item -> item.setOrder(savedOrder));
+        return orderItemsRepository.saveAll(orderItems);
+    }
+
+    @Cacheable(value = "allOrders", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<OrderResponseDTO> getAllOrders(Pageable pageable) {
         return orderRepository.findAll(pageable).map(order -> {
             List<OrderItemsEntity> items = orderItemsRepository.findByOrderId(order.getId());
@@ -140,7 +157,8 @@ public class OrderService implements IOrderService {
         return buildOrderResponse(order, items);
     }
 
-    @CacheEvict(value = {"orderById", "inventoryById", "inventoryByProductId"}, allEntries = true)
+    @CachePut(value = "orderById", key = "#id")
+    @CacheEvict(value = {"inventoryById", "inventoryByProductId", "allOrders"}, allEntries = true)
     @Transactional
     public OrderResponseDTO updateOrderStatus(Long id, UpdateOrderDTO updateOrderDTO) {
         OrderEntity order = orderRepository.findById(id)

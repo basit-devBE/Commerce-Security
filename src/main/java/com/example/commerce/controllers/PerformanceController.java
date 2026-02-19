@@ -1,10 +1,9 @@
 package com.example.commerce.controllers;
 
 import com.example.commerce.aspects.PerformanceMonitoringAspect;
-import com.example.commerce.config.RequiresRole;
 import com.example.commerce.dtos.responses.ApiResponse;
-import com.example.commerce.enums.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,27 +25,24 @@ public class PerformanceController {
         this.performanceAspect = performanceAspect;
     }
 
-    @Operation(summary = "Get database fetch times")
-    @RequiresRole(UserRole.ADMIN)
-    @GetMapping("/db-metrics")
+    @Operation(summary = "Get database fetch times", security = @SecurityRequirement(name = "Bearer Authentication"))
+    @GetMapping("/admin/db-metrics")
     public ResponseEntity<ApiResponse<Map<String, Map<String, Object>>>> getDbMetrics() {
         Map<String, Map<String, Object>> metrics = performanceAspect.getDbFetchTimes();
         ApiResponse<Map<String, Map<String, Object>>> response = new ApiResponse<>(HttpStatus.OK.value(), "Performance metrics retrieved successfully", metrics);
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Get cache metrics")
-    @RequiresRole(UserRole.ADMIN)
-    @GetMapping("/cache-metrics")
+    @Operation(summary = "Get cache metrics", security = @SecurityRequirement(name = "Bearer Authentication"))
+    @GetMapping("/admin/cache-metrics")
     public ResponseEntity<ApiResponse<Map<String, Map<String, Object>>>> getCacheMetrics() {
         Map<String, Map<String, Object>> metrics = performanceAspect.getCacheMetrics();
         ApiResponse<Map<String, Map<String, Object>>> response = new ApiResponse<>(HttpStatus.OK.value(), "Cache metrics retrieved successfully", metrics);
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Clear performance metrics")
-    @RequiresRole(UserRole.ADMIN)
-    @DeleteMapping("/clear-metrics")
+    @Operation(summary = "Clear performance metrics", security = @SecurityRequirement(name = "Bearer Authentication"))
+    @DeleteMapping("/admin/clear-metrics")
     public ResponseEntity<ApiResponse<Void>> clearMetrics() {
         performanceAspect.clearMetrics();
         ApiResponse<Void> response = new ApiResponse<>(HttpStatus.OK.value(), "Performance metrics cleared successfully", null);

@@ -3,39 +3,55 @@ package com.example.commerce.services;
 import com.example.commerce.dtos.requests.LoginDTO;
 import com.example.commerce.dtos.requests.UpdateUserDTO;
 import com.example.commerce.dtos.requests.UserRegistrationDTO;
+import com.example.commerce.dtos.responses.AuthResponseDTO;
 import com.example.commerce.dtos.responses.LoginResponseDTO;
+import com.example.commerce.dtos.responses.RefreshTokenResponseDTO;
 import com.example.commerce.dtos.responses.userSummaryDTO;
 import com.example.commerce.entities.UserEntity;
 import com.example.commerce.errorhandlers.ResourceAlreadyExists;
 import com.example.commerce.errorhandlers.ResourceNotFoundException;
+import com.example.commerce.errorhandlers.UnauthorizedException;
 import com.example.commerce.interfaces.IUserService;
 import com.example.commerce.mappers.UserMapper;
 import com.example.commerce.repositories.UserRepository;
+import com.example.commerce.specifications.UserSpecifications;
 import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
-import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
-@Slf4j
 public class UserService implements IUserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
 
-    public UserService(UserRepository userRepository, UserMapper userMapper) {
+    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtService jwtService) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+        this.jwtService = jwtService;
     }
 
-    @CacheEvict(value = {"userById", "userByEmail"}, allEntries = true)
+    @Caching(put = {
+        @CachePut(value = "userById", key = "#result.id"),
+        @CachePut(value = "userByEmail", key = "#result.email")
+    })
+    @CacheEvict(value = "allUsers", allEntries = true)
     public LoginResponseDTO addUser(UserRegistrationDTO userDTO){
 
         Optional<UserEntity> existingUser = userRepository.findByEmail(userDTO.getEmail());
@@ -43,8 +59,7 @@ public class UserService implements IUserService {
             throw new ResourceAlreadyExists("Email already exists: " + userDTO.getEmail());
         } else {
             UserEntity userEntity = userMapper.toEntity(userDTO);
-            
-            String hashedPassword = BCrypt.hashpw(userEntity.getPassword(), BCrypt.gensalt());
+            String hashedPassword = passwordEncoder.encode(userDTO.getPassword());
             userEntity.setPassword(hashedPassword);
 
             UserEntity savedUser = userRepository.save(userEntity);
@@ -52,24 +67,31 @@ public class UserService implements IUserService {
         }
     }
 
-    public LoginResponseDTO loginUser(LoginDTO loginDTO){
-        log.info("Attempting login for email: {}", loginDTO.getEmail());
-        Optional<UserEntity> userOpt = userRepository.findByEmail(loginDTO.getEmail());
-        if(userOpt.isPresent()){
-            UserEntity userEntity = userOpt.get();
-            if(BCrypt.checkpw(loginDTO.getPassword(), userEntity.getPassword())){
-                String randomString = UUID.randomUUID().toString().replace("-", "");
-                String token = randomString + "-" + userEntity.getId();
-                LoginResponseDTO responseDTO = userMapper.toResponseDTO(userEntity);
-                responseDTO.setToken(token);
-                return responseDTO;
+    public AuthResponseDTO loginUser(LoginDTO loginDTO){
+        try{
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginDTO.getEmail(),
+                            loginDTO.getPassword()
+                    )
+            );
+            if(authentication.isAuthenticated()){
+                UserEntity userEntity = (UserEntity) authentication.getPrincipal();
+                //TODO: surround with an if to check if user is active or not
+                assert userEntity != null;
+                String accesstoken = jwtService.generateAccessToken(userEntity);
+                String refreshtoken = jwtService.generateRefreshToken(userEntity);
+                LoginResponseDTO loginResponseDTO = userMapper.toResponseDTO(userEntity);
+                loginResponseDTO.setToken(accesstoken);
+                return new AuthResponseDTO(loginResponseDTO, refreshtoken);
             } else {
-                throw new IllegalArgumentException("Invalid password");
+                throw new ResourceNotFoundException("Invalid email or password");
             }
-        } else {
-            throw new ResourceNotFoundException("User not found with email: " + loginDTO.getEmail());
+        }catch (Exception e){
+            throw new ResourceNotFoundException("Invalid email or password");
         }
     }
+
 
     @Cacheable(value = "userByEmail", key = "#email")
     public userSummaryDTO findUserByEmail(String email){
@@ -91,7 +113,8 @@ public class UserService implements IUserService {
         }
     }
 
-    @CacheEvict(value = {"userById", "userByEmail"}, allEntries = true)
+    @CachePut(value = "userById", key = "#id")
+    @CacheEvict(value = {"userByEmail", "allUsers"}, allEntries = true)
     public userSummaryDTO updateUser(Long id, @Valid UpdateUserDTO userDTO){
         UserEntity userEntity = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
@@ -108,24 +131,39 @@ public class UserService implements IUserService {
         return userMapper.toSummaryDTO(updatedUser);
     }
 
+    @Cacheable(value = "allUsers", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<userSummaryDTO> getAllUsers(Pageable pageable){
       return userRepository.findAll(pageable).map(userMapper::toSummaryDTO);
     }
     
     public Page<userSummaryDTO> searchUsers(String search, Pageable pageable) {
-        return userRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
-            search, search, search, pageable
-        ).map(userMapper::toSummaryDTO);
+        return userRepository.findAll(UserSpecifications.searchByKeyword(search), pageable)
+                .map(userMapper::toSummaryDTO);
     }
 
     public List<userSummaryDTO> getAllUsersList() {
         return userRepository.findAll().stream().map(userMapper::toSummaryDTO).toList();
     }
 
-    @CacheEvict(value = {"userById", "userByEmail"}, allEntries = true)
+    @CacheEvict(value = {"userById", "userByEmail", "allUsers"}, allEntries = true)
     public void deleteUser(Long id){
         UserEntity userEntity = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
         userRepository.delete(userEntity);
+    }
+
+    public RefreshTokenResponseDTO validateAndReturnTokens(String refreshToken){
+        if(jwtService.validateRefreshToken(refreshToken)){
+            String email = jwtService.extractEmailFromRefreshToken(refreshToken);
+            UserEntity userEntity = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+            String newAccessToken = jwtService.generateAccessToken(userEntity);
+            String newRefreshToken = jwtService.generateRefreshToken(userEntity);
+            
+            return new RefreshTokenResponseDTO(newAccessToken, newRefreshToken);
+        } else {
+            throw new UnauthorizedException("Invalid or expired refresh token");
+        }
     }
 }

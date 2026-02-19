@@ -12,7 +12,6 @@ public class ProductResponseDTO{
     private Double price;
     private Integer quantity;
     private String categoryName;
-    private boolean available;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
