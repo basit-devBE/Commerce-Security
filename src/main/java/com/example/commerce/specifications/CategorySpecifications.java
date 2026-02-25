@@ -1,6 +1,9 @@
 package com.example.commerce.specifications;
 
 import com.example.commerce.entities.CategoryEntity;
+
+import java.util.Locale;
+
 import org.springframework.data.jpa.domain.Specification;
 
 public class CategorySpecifications {
@@ -10,7 +13,7 @@ public class CategorySpecifications {
             if (search == null || search.isBlank()) {
                 return cb.conjunction();
             }
-            String pattern = "%" + search.toLowerCase() + "%";
+            String pattern = "%" + search.toLowerCase(Locale.ROOT) + "%";
             return cb.or(
                 cb.like(cb.lower(root.get("name")), pattern),
                 cb.like(cb.lower(root.get("description")), pattern)
@@ -18,3 +21,4 @@ public class CategorySpecifications {
         };
     }
 }
+    

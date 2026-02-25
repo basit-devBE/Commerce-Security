@@ -58,7 +58,8 @@ public class SecurityConfig {
                                         "/error",
                                         "/swagger-ui/**",
                                         "/v3/api-docs/**",
-                                        "/graphiql/**"
+                                        "/graphiql/**",
+                                        "/actuator/**"
                                 )
                                 .permitAll()
                                 .anyRequest().authenticated()
@@ -87,12 +88,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config){
-        try {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
             return config.getAuthenticationManager();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to get AuthenticationManager", e);
-        }
-    }
-
+}
 }

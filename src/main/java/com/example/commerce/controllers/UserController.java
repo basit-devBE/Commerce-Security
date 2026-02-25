@@ -99,7 +99,6 @@ public class UserController {
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-            log.info("Blacklisting token on logout: {}", token);
             tokenBlacklistService.blacklistToken(token);
         }        
         ResponseCookie clearCookie = ResponseCookie.from("refreshToken", "")
