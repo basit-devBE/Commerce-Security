@@ -77,8 +77,9 @@ public class UserService implements IUserService {
             );
             if(authentication.isAuthenticated()){
                 UserEntity userEntity = (UserEntity) authentication.getPrincipal();
-                //TODO: surround with an if to check if user is active or not
-                assert userEntity != null;
+                if(userEntity == null){
+                    throw new ResourceNotFoundException("User not found with email: " + loginDTO.getEmail());
+                }
                 String accesstoken = jwtService.generateAccessToken(userEntity);
                 String refreshtoken = jwtService.generateRefreshToken(userEntity);
                 LoginResponseDTO loginResponseDTO = userMapper.toResponseDTO(userEntity);
