@@ -1,11 +1,11 @@
 package com.example.commerce.config;
 
 
+import com.example.commerce.enums.UserRole;
 import com.example.commerce.services.CustomOAuth2UserService;
 import com.example.commerce.services.CustomUserService;
 import com.example.commerce.services.JwtService;
 import com.example.commerce.services.TokenBlacklistService;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -48,7 +48,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
                         auth -> auth
-                                .requestMatchers("/api/*/admin/**").hasRole("ADMIN")
+                                .requestMatchers("/api/*/admin/**").hasRole(UserRole.ADMIN.name())
                                 .requestMatchers("/api/products/public/**",
                                         "/api/users/public/**",
                                         "/api/categories/public/**",

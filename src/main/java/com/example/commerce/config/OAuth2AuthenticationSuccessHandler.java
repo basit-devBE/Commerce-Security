@@ -1,6 +1,7 @@
 package com.example.commerce.config;
 
 import com.example.commerce.entities.UserEntity;
+import com.example.commerce.errorhandlers.ResourceNotFoundException;
 import com.example.commerce.repositories.UserRepository;
 import com.example.commerce.services.JwtService;
 import jakarta.servlet.ServletException;
@@ -40,7 +41,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String email = oAuth2User.getAttribute("email");
         
         UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found after OAuth2 login"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found after OAuth2 login"));
         
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);

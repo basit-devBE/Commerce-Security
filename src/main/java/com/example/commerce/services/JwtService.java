@@ -34,7 +34,7 @@ public class JwtService {
                 .claims()
                 .add(claims)
                 .subject(user.getEmail())
-                .issuedAt(new Date(System.currentTimeMillis())).expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
+                .issuedAt(new Date(System.currentTimeMillis())).expiration(new Date(System.currentTimeMillis() + 1000 * 60))
                 .and()
                 .signWith(getKey(accesssecretKey), Jwts.SIG.HS256)
                 .compact();
@@ -83,10 +83,6 @@ public class JwtService {
         final Claims claims = extractAllClaims(token, secretKey);
         return claimsResolver.apply(claims);
     }
-
-
-
-
 
     public Claims extractAllClaims(String token, String secretKey) {
         return Jwts.parser()

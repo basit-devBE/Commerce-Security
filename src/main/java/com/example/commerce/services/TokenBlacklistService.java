@@ -8,7 +8,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class TokenBlacklistService {
-    
     private final Map<String, Long> blacklistedTokens = new ConcurrentHashMap<>();
     private final JwtService jwtService;
 

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Inventory Management")
 @RestController
 @RequestMapping("/api/inventory")
+
 public class InventoryController {
     private final IInventoryService inventoryService;
 
