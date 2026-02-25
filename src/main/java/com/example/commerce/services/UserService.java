@@ -11,15 +11,18 @@ import com.example.commerce.entities.UserEntity;
 import com.example.commerce.errorhandlers.ResourceAlreadyExists;
 import com.example.commerce.errorhandlers.ResourceNotFoundException;
 import com.example.commerce.errorhandlers.UnauthorizedException;
+import com.example.commerce.events.UserRegisterationEvent;
 import com.example.commerce.interfaces.IUserService;
 import com.example.commerce.mappers.UserMapper;
 import com.example.commerce.repositories.UserRepository;
 import com.example.commerce.specifications.UserSpecifications;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,7 +33,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-
+@Slf4j
 @Service
 public class UserService implements IUserService {
     private final UserRepository userRepository;
@@ -38,13 +41,15 @@ public class UserService implements IUserService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final ApplicationEventPublisher publisher;
 
-    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtService jwtService) {
+    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtService jwtService, ApplicationEventPublisher publisher) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
+        this.publisher = publisher;
     }
 
     @Caching(put = {
@@ -63,6 +68,8 @@ public class UserService implements IUserService {
             userEntity.setPassword(hashedPassword);
 
             UserEntity savedUser = userRepository.save(userEntity);
+            log.info("Publishing user registration event for email: {}", savedUser.getEmail());
+            publisher.publishEvent(new UserRegisterationEvent(savedUser.getEmail()));
             return userMapper.toResponseDTO(savedUser);
         }
     }
