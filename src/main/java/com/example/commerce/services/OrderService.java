@@ -8,12 +8,15 @@ import com.example.commerce.dtos.responses.OrderResponseDTO;
 import com.example.commerce.entities.*;
 import com.example.commerce.enums.OrderStatus;
 import com.example.commerce.errorhandlers.ResourceNotFoundException;
+import com.example.commerce.events.OrderCreatedEvent;
 import com.example.commerce.interfaces.IOrderService;
 import com.example.commerce.mappers.OrderMapper;
 import com.example.commerce.repositories.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class OrderService implements IOrderService {
     private final OrderRepository orderRepository;
@@ -31,19 +35,22 @@ public class OrderService implements IOrderService {
     private final UserRepository userRepository;
     private final InventoryRepository inventoryRepository;
     private final OrderMapper orderMapper;
+    private final ApplicationEventPublisher publisher;
 
     public OrderService(OrderRepository orderRepository, 
                        OrderItemsRepository orderItemsRepository,
                        ProductRepository productRepository,
                        UserRepository userRepository,
                        InventoryRepository inventoryRepository,
-                       OrderMapper orderMapper) {
+                       OrderMapper orderMapper,
+                       ApplicationEventPublisher publisher) {
         this.orderRepository = orderRepository;
         this.orderItemsRepository = orderItemsRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.inventoryRepository = inventoryRepository;
         this.orderMapper = orderMapper;
+        this.publisher = publisher;
     }
 
     @CachePut(value = "orderById", key = "#result.id")
@@ -56,6 +63,15 @@ public class OrderService implements IOrderService {
         
         OrderEntity savedOrder = saveOrder(user, totalAmount);
         List<OrderItemsEntity> savedItems = saveOrderItems(orderItems, savedOrder);
+        
+        log.info("Publishing order created event for order ID: {}", savedOrder.getId());
+        publisher.publishEvent(new OrderCreatedEvent(
+            savedOrder.getId(),
+            user.getEmail(),
+            user.getFirstName() + " " + user.getLastName(),
+            totalAmount
+        ));
+        log.info("Order created event published for order ID: {}", savedOrder.getId());
         
         return buildOrderResponse(savedOrder, savedItems);
     }

@@ -70,6 +70,7 @@ public class UserService implements IUserService {
             UserEntity savedUser = userRepository.save(userEntity);
             log.info("Publishing user registration event for email: {}", savedUser.getEmail());
             publisher.publishEvent(new UserRegisterationEvent(savedUser.getEmail()));
+            log.info("User registration event published for email: {}", savedUser.getEmail());
             return userMapper.toResponseDTO(savedUser);
         }
     }

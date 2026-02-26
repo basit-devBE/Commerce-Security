@@ -4,9 +4,11 @@ import lombok.Getter;
 
 @Getter
 public class UserRegisterationEvent {
-    private final  String email;
+    private final String email;
 
     public UserRegisterationEvent(String email) {
         this.email = email;
     }
+
+    
 }

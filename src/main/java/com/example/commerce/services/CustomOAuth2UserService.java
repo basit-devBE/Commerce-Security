@@ -11,13 +11,16 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
     
     public CustomOAuth2UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -34,7 +37,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 newUser.setEmail(email);
                 newUser.setFirstName(oAuth2User.getAttribute("given_name"));
                 newUser.setLastName(oAuth2User.getAttribute("family_name"));
-                newUser.setPassword(null);
+                newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
                 newUser.setRole(UserRole.CUSTOMER);
                 userRepository.save(newUser);
             }
