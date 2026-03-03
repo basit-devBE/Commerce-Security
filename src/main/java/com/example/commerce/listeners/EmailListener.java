@@ -22,7 +22,7 @@ public class EmailListener {
     public void handleUserRegistered(UserRegisterationEvent event) {
         log.info("Received user registration event for email: {}", event.getEmail());
         emailService.sendWelcomeEmail(event.getEmail())
-            .exceptionally(ex -> {
+            .exceptionallyAsync(ex -> {
                 log.error("Failed to send welcome email: {}", ex.getMessage());
                 return null;
             });

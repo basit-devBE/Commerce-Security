@@ -26,7 +26,7 @@ public class OrderEmailListener {
                 event.getCustomerName(),
                 event.getOrderId(),
                 event.getTotalAmount()
-        ).exceptionally(ex -> {
+        ).exceptionallyAsync(ex -> {
             log.error("Failed to send order confirmation email: {}", ex.getMessage());
             return null;
         });
