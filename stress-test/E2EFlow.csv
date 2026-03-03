@@ -1,0 +1,120 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1772545160259,394,Login,200,,E2E flow 1-1,text,true,,1077,296,1,1,http://localhost:8080/api/users/public/login,393,0,1
+1772545160653,130,Add Item To Cart,200,,E2E flow 1-1,text,true,,873,425,1,1,http://localhost:8080/api/cart/add,130,0,0
+1772545160783,43,Create Order,200,,E2E flow 1-1,text,true,,751,400,1,1,http://localhost:8080/api/orders/create,42,0,0
+1772545160826,0,Debug Sampler,200,OK,E2E flow 1-1,text,true,,543,0,1,1,null,0,0,0
+1772545160846,92,Login,200,,E2E flow 1-2,text,true,,1086,298,1,1,http://localhost:8080/api/users/public/login,91,0,1
+1772545160938,21,Add Item To Cart,200,,E2E flow 1-2,text,true,,874,428,1,1,http://localhost:8080/api/cart/add,20,0,0
+1772545160959,25,Create Order,200,,E2E flow 1-2,text,true,,755,403,1,1,http://localhost:8080/api/orders/create,25,0,0
+1772545160985,0,Debug Sampler,200,OK,E2E flow 1-2,text,true,,548,0,1,1,null,0,0,0
+1772545161436,93,Login,200,,E2E flow 1-3,text,true,,1100,301,1,1,http://localhost:8080/api/users/public/login,93,0,1
+1772545161530,17,Add Item To Cart,200,,E2E flow 1-3,text,true,,873,432,1,1,http://localhost:8080/api/cart/add,16,0,0
+1772545161547,18,Create Order,200,,E2E flow 1-3,text,true,,761,407,1,1,http://localhost:8080/api/orders/create,17,0,0
+1772545161565,0,Debug Sampler,200,OK,E2E flow 1-3,text,true,,555,0,1,1,null,0,0,0
+1772545162023,89,Login,200,,E2E flow 1-4,text,true,,1091,299,1,1,http://localhost:8080/api/users/public/login,89,0,0
+1772545162113,14,Add Item To Cart,200,,E2E flow 1-4,text,true,,874,429,1,1,http://localhost:8080/api/cart/add,14,0,0
+1772545162128,18,Create Order,200,,E2E flow 1-4,text,true,,757,404,1,1,http://localhost:8080/api/orders/create,17,0,0
+1772545162146,0,Debug Sampler,200,OK,E2E flow 1-4,text,true,,550,0,1,1,null,0,0,0
+1772545162611,93,Login,200,,E2E flow 1-5,text,true,,1091,299,1,1,http://localhost:8080/api/users/public/login,93,0,1
+1772545162705,13,Add Item To Cart,200,,E2E flow 1-5,text,true,,873,429,1,1,http://localhost:8080/api/cart/add,12,0,0
+1772545162718,15,Create Order,200,,E2E flow 1-5,text,true,,757,404,1,1,http://localhost:8080/api/orders/create,15,0,0
+1772545162733,0,Debug Sampler,200,OK,E2E flow 1-5,text,true,,550,0,1,1,null,0,0,0
+1772545163197,86,Login,200,,E2E flow 1-6,text,true,,1100,301,1,1,http://localhost:8080/api/users/public/login,86,0,1
+1772545163284,12,Add Item To Cart,200,,E2E flow 1-6,text,true,,873,432,1,1,http://localhost:8080/api/cart/add,11,0,0
+1772545163296,15,Create Order,200,,E2E flow 1-6,text,true,,761,407,1,1,http://localhost:8080/api/orders/create,15,0,0
+1772545163312,0,Debug Sampler,200,OK,E2E flow 1-6,text,true,,555,0,1,1,null,0,0,0
+1772545163787,103,Login,200,,E2E flow 1-7,text,true,,1098,300,1,1,http://localhost:8080/api/users/public/login,103,0,1
+1772545163890,13,Add Item To Cart,200,,E2E flow 1-7,text,true,,875,432,1,1,http://localhost:8080/api/cart/add,13,0,0
+1772545163903,13,Create Order,200,,E2E flow 1-7,text,true,,760,407,1,1,http://localhost:8080/api/orders/create,12,0,0
+1772545163916,0,Debug Sampler,200,OK,E2E flow 1-7,text,true,,554,0,1,1,null,0,0,0
+1772545164377,84,Login,200,,E2E flow 1-8,text,true,,1098,300,1,1,http://localhost:8080/api/users/public/login,84,0,0
+1772545164462,12,Add Item To Cart,200,,E2E flow 1-8,text,true,,875,432,1,1,http://localhost:8080/api/cart/add,12,0,0
+1772545164475,13,Create Order,200,,E2E flow 1-8,text,true,,760,407,1,1,http://localhost:8080/api/orders/create,13,0,0
+1772545164489,0,Debug Sampler,200,OK,E2E flow 1-8,text,true,,554,0,1,1,null,0,0,0
+1772545164963,86,Login,200,,E2E flow 1-9,text,true,,1108,302,1,1,http://localhost:8080/api/users/public/login,85,0,0
+1772545165049,15,Add Item To Cart,200,,E2E flow 1-9,text,true,,875,435,1,1,http://localhost:8080/api/cart/add,15,0,0
+1772545165065,12,Create Order,200,,E2E flow 1-9,text,true,,764,410,1,1,http://localhost:8080/api/orders/create,12,0,0
+1772545165077,1,Debug Sampler,200,OK,E2E flow 1-9,text,true,,559,0,1,1,null,0,0,0
+1772545165552,91,Login,200,,E2E flow 1-10,text,true,,1102,301,1,1,http://localhost:8080/api/users/public/login,90,0,1
+1772545165643,12,Add Item To Cart,200,,E2E flow 1-10,text,true,,875,433,1,1,http://localhost:8080/api/cart/add,12,0,0
+1772545165655,13,Create Order,200,,E2E flow 1-10,text,true,,762,408,1,1,http://localhost:8080/api/orders/create,13,0,0
+1772545165668,0,Debug Sampler,200,OK,E2E flow 1-10,text,true,,557,0,1,1,null,0,0,0
+1772545166139,96,Login,200,,E2E flow 1-11,text,true,,1065,291,1,1,http://localhost:8080/api/users/public/login,96,0,1
+1772545166235,12,Add Item To Cart,200,,E2E flow 1-11,text,true,,873,419,1,1,http://localhost:8080/api/cart/add,11,0,0
+1772545166247,11,Create Order,200,,E2E flow 1-11,text,true,,751,394,1,1,http://localhost:8080/api/orders/create,11,0,0
+1772545166258,0,Debug Sampler,200,OK,E2E flow 1-11,text,true,,533,0,1,1,null,0,0,0
+1772545166728,106,Login,200,,E2E flow 1-12,text,true,,1077,296,1,1,http://localhost:8080/api/users/public/login,105,0,1
+1772545166835,23,Add Item To Cart,200,,E2E flow 1-12,text,true,,872,425,1,1,http://localhost:8080/api/cart/add,23,0,0
+1772545166858,25,Create Order,200,,E2E flow 1-12,text,true,,751,400,1,1,http://localhost:8080/api/orders/create,25,0,0
+1772545166883,0,Debug Sampler,200,OK,E2E flow 1-12,text,true,,544,0,1,1,null,0,0,0
+1772545167316,96,Login,200,,E2E flow 1-13,text,true,,1086,298,1,1,http://localhost:8080/api/users/public/login,96,0,0
+1772545167413,11,Add Item To Cart,200,,E2E flow 1-13,text,true,,873,428,1,1,http://localhost:8080/api/cart/add,11,0,0
+1772545167425,14,Create Order,200,,E2E flow 1-13,text,true,,755,403,1,1,http://localhost:8080/api/orders/create,13,0,0
+1772545167439,0,Debug Sampler,200,OK,E2E flow 1-13,text,true,,549,0,1,1,null,0,0,0
+1772545167903,95,Login,200,,E2E flow 1-14,text,true,,1100,301,1,1,http://localhost:8080/api/users/public/login,95,0,1
+1772545167999,11,Add Item To Cart,200,,E2E flow 1-14,text,true,,873,432,1,1,http://localhost:8080/api/cart/add,11,0,0
+1772545168011,17,Create Order,200,,E2E flow 1-14,text,true,,761,407,1,1,http://localhost:8080/api/orders/create,17,0,0
+1772545168028,0,Debug Sampler,200,OK,E2E flow 1-14,text,true,,556,0,1,1,null,0,0,0
+1772545168491,82,Login,200,,E2E flow 1-15,text,true,,1091,299,1,1,http://localhost:8080/api/users/public/login,82,0,0
+1772545168574,9,Add Item To Cart,200,,E2E flow 1-15,text,true,,874,429,1,1,http://localhost:8080/api/cart/add,9,0,0
+1772545168584,11,Create Order,200,,E2E flow 1-15,text,true,,757,404,1,1,http://localhost:8080/api/orders/create,10,0,0
+1772545168595,0,Debug Sampler,200,OK,E2E flow 1-15,text,true,,551,0,1,1,null,0,0,0
+1772545169079,98,Login,200,,E2E flow 1-16,text,true,,1091,299,1,1,http://localhost:8080/api/users/public/login,98,0,1
+1772545169178,18,Add Item To Cart,200,,E2E flow 1-16,text,true,,872,429,1,1,http://localhost:8080/api/cart/add,18,0,0
+1772545169197,23,Create Order,200,,E2E flow 1-16,text,true,,757,404,1,1,http://localhost:8080/api/orders/create,22,0,0
+1772545169220,1,Debug Sampler,200,OK,E2E flow 1-16,text,true,,551,0,1,1,null,0,0,0
+1772545169668,95,Login,200,,E2E flow 1-17,text,true,,1100,301,1,1,http://localhost:8080/api/users/public/login,95,0,1
+1772545169763,13,Add Item To Cart,200,,E2E flow 1-17,text,true,,872,432,1,1,http://localhost:8080/api/cart/add,12,0,0
+1772545169776,12,Create Order,200,,E2E flow 1-17,text,true,,761,407,1,1,http://localhost:8080/api/orders/create,11,0,0
+1772545169788,1,Debug Sampler,200,OK,E2E flow 1-17,text,true,,556,0,1,1,null,0,0,0
+1772545336635,95,Login,200,,E2E flow 1-1,text,true,,1077,296,1,1,http://localhost:8080/api/users/public/login,95,0,1
+1772545336731,12,Add Item To Cart,200,,E2E flow 1-1,text,true,,873,425,1,1,http://localhost:8080/api/cart/add,12,0,0
+1772545336744,13,Create Order,200,,E2E flow 1-1,text,true,,751,400,1,1,http://localhost:8080/api/orders/create,13,0,0
+1772545337222,83,Login,200,,E2E flow 1-2,text,true,,1086,298,1,1,http://localhost:8080/api/users/public/login,83,0,0
+1772545337306,11,Add Item To Cart,200,,E2E flow 1-2,text,true,,874,428,1,1,http://localhost:8080/api/cart/add,11,0,0
+1772545337318,13,Create Order,200,,E2E flow 1-2,text,true,,755,403,1,1,http://localhost:8080/api/orders/create,13,0,0
+1772545337810,89,Login,200,,E2E flow 1-3,text,true,,1100,301,1,1,http://localhost:8080/api/users/public/login,89,0,1
+1772545337900,11,Add Item To Cart,200,,E2E flow 1-3,text,true,,873,432,1,1,http://localhost:8080/api/cart/add,11,0,0
+1772545337911,12,Create Order,200,,E2E flow 1-3,text,true,,761,407,1,1,http://localhost:8080/api/orders/create,12,0,0
+1772545338398,87,Login,200,,E2E flow 1-4,text,true,,1091,299,1,1,http://localhost:8080/api/users/public/login,87,0,0
+1772545338485,12,Add Item To Cart,200,,E2E flow 1-4,text,true,,874,429,1,1,http://localhost:8080/api/cart/add,12,0,0
+1772545338497,11,Create Order,200,,E2E flow 1-4,text,true,,757,404,1,1,http://localhost:8080/api/orders/create,11,0,0
+1772545338986,84,Login,200,,E2E flow 1-5,text,true,,1091,299,1,1,http://localhost:8080/api/users/public/login,84,0,0
+1772545339071,10,Add Item To Cart,200,,E2E flow 1-5,text,true,,873,429,1,1,http://localhost:8080/api/cart/add,10,0,0
+1772545339081,10,Create Order,200,,E2E flow 1-5,text,true,,757,404,1,1,http://localhost:8080/api/orders/create,10,0,0
+1772545339573,84,Login,200,,E2E flow 1-6,text,true,,1100,301,1,1,http://localhost:8080/api/users/public/login,84,0,0
+1772545339658,10,Add Item To Cart,200,,E2E flow 1-6,text,true,,873,432,1,1,http://localhost:8080/api/cart/add,10,0,0
+1772545339668,19,Create Order,200,,E2E flow 1-6,text,true,,761,407,1,1,http://localhost:8080/api/orders/create,11,0,0
+1772545340162,90,Login,200,,E2E flow 1-7,text,true,,1098,300,1,1,http://localhost:8080/api/users/public/login,90,0,1
+1772545340252,15,Add Item To Cart,200,,E2E flow 1-7,text,true,,875,432,1,1,http://localhost:8080/api/cart/add,15,0,0
+1772545340268,12,Create Order,200,,E2E flow 1-7,text,true,,760,407,1,1,http://localhost:8080/api/orders/create,12,0,0
+1772545340750,85,Login,200,,E2E flow 1-8,text,true,,1098,300,1,1,http://localhost:8080/api/users/public/login,85,0,0
+1772545340836,12,Add Item To Cart,200,,E2E flow 1-8,text,true,,875,432,1,1,http://localhost:8080/api/cart/add,11,0,0
+1772545340848,12,Create Order,200,,E2E flow 1-8,text,true,,760,407,1,1,http://localhost:8080/api/orders/create,12,0,0
+1772545341338,89,Login,200,,E2E flow 1-9,text,true,,1108,302,1,1,http://localhost:8080/api/users/public/login,89,0,1
+1772545341428,18,Add Item To Cart,200,,E2E flow 1-9,text,true,,875,435,1,1,http://localhost:8080/api/cart/add,18,0,0
+1772545341446,15,Create Order,200,,E2E flow 1-9,text,true,,764,410,1,1,http://localhost:8080/api/orders/create,15,0,0
+1772545341925,84,Login,200,,E2E flow 1-10,text,true,,1102,301,1,1,http://localhost:8080/api/users/public/login,84,0,1
+1772545342010,11,Add Item To Cart,200,,E2E flow 1-10,text,true,,875,433,1,1,http://localhost:8080/api/cart/add,11,0,0
+1772545342021,9,Create Order,200,,E2E flow 1-10,text,true,,762,408,1,1,http://localhost:8080/api/orders/create,9,0,0
+1772545342515,96,Login,200,,E2E flow 1-11,text,true,,1065,291,1,1,http://localhost:8080/api/users/public/login,96,0,0
+1772545342612,17,Add Item To Cart,200,,E2E flow 1-11,text,true,,872,419,1,1,http://localhost:8080/api/cart/add,17,0,0
+1772545342630,14,Create Order,200,,E2E flow 1-11,text,true,,751,394,1,1,http://localhost:8080/api/orders/create,14,0,0
+1772545343103,86,Login,200,,E2E flow 1-12,text,true,,1077,296,1,1,http://localhost:8080/api/users/public/login,86,0,1
+1772545343190,14,Add Item To Cart,200,,E2E flow 1-12,text,true,,873,425,1,1,http://localhost:8080/api/cart/add,14,0,0
+1772545343205,18,Create Order,200,,E2E flow 1-12,text,true,,751,400,1,1,http://localhost:8080/api/orders/create,17,0,0
+1772545343691,96,Login,200,,E2E flow 1-13,text,true,,1086,298,1,1,http://localhost:8080/api/users/public/login,96,0,1
+1772545343787,9,Add Item To Cart,200,,E2E flow 1-13,text,true,,874,428,1,1,http://localhost:8080/api/cart/add,9,0,0
+1772545343797,9,Create Order,200,,E2E flow 1-13,text,true,,755,403,1,1,http://localhost:8080/api/orders/create,9,0,0
+1772545344278,95,Login,200,,E2E flow 1-14,text,true,,1100,301,1,1,http://localhost:8080/api/users/public/login,95,0,1
+1772545344373,12,Add Item To Cart,200,,E2E flow 1-14,text,true,,872,432,1,1,http://localhost:8080/api/cart/add,12,0,0
+1772545344385,10,Create Order,200,,E2E flow 1-14,text,true,,761,407,1,1,http://localhost:8080/api/orders/create,10,0,0
+1772545344868,95,Login,200,,E2E flow 1-15,text,true,,1091,299,1,1,http://localhost:8080/api/users/public/login,95,0,1
+1772545344964,9,Add Item To Cart,200,,E2E flow 1-15,text,true,,873,429,1,1,http://localhost:8080/api/cart/add,9,0,0
+1772545344973,11,Create Order,200,,E2E flow 1-15,text,true,,757,404,1,1,http://localhost:8080/api/orders/create,11,0,0
+1772545345456,95,Login,200,,E2E flow 1-16,text,true,,1091,299,1,1,http://localhost:8080/api/users/public/login,95,0,1
+1772545345552,9,Add Item To Cart,200,,E2E flow 1-16,text,true,,873,429,1,1,http://localhost:8080/api/cart/add,9,0,0
+1772545345561,10,Create Order,200,,E2E flow 1-16,text,true,,757,404,1,1,http://localhost:8080/api/orders/create,10,0,0
+1772545346042,94,Login,200,,E2E flow 1-17,text,true,,1100,301,1,1,http://localhost:8080/api/users/public/login,94,0,1
+1772545346136,11,Add Item To Cart,200,,E2E flow 1-17,text,true,,872,432,1,1,http://localhost:8080/api/cart/add,11,0,0
+1772545346147,8,Create Order,200,,E2E flow 1-17,text,true,,761,407,1,1,http://localhost:8080/api/orders/create,8,0,0

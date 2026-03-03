@@ -18,14 +18,7 @@ const Checkout = () => {
     setLoading(true);
 
     try {
-      const orderData = {
-        items: cartItems.map((item) => ({
-          productId: item.id,
-          quantity: item.quantity,
-        })),
-      };
-
-      await orderAPI.create(orderData);
+      await orderAPI.create();
       setSuccess(true);
       clearCart();
       
