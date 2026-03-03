@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OAuth2 Redirect</title>
+</head>
+<body>
+    <script>
+        // This page should be served at http://localhost:3000/oauth2/redirect
+        // Extract tokens from URL query parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const accessToken = urlParams.get('accessToken');
+        const refreshToken = urlParams.get('refreshToken');
+
+        if (accessToken && refreshToken && window.opener) {
+            // Send tokens to parent window
+            window.opener.postMessage(
+                { accessToken, refreshToken },
+                window.location.origin
+            );
+            
+            // Close popup
+            window.close();
+        } else {
+            document.body.innerHTML = '<p>Authentication failed. Please close this window and try again.</p>';
+        }
+    </script>
+</body>
+</html>

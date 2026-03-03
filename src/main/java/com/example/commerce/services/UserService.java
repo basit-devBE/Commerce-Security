@@ -11,15 +11,18 @@ import com.example.commerce.entities.UserEntity;
 import com.example.commerce.errorhandlers.ResourceAlreadyExists;
 import com.example.commerce.errorhandlers.ResourceNotFoundException;
 import com.example.commerce.errorhandlers.UnauthorizedException;
+import com.example.commerce.events.UserRegisterationEvent;
 import com.example.commerce.interfaces.IUserService;
 import com.example.commerce.mappers.UserMapper;
 import com.example.commerce.repositories.UserRepository;
 import com.example.commerce.specifications.UserSpecifications;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -31,20 +34,23 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class UserService implements IUserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final ApplicationEventPublisher publisher;
+    private AuthenticationManager authenticationManager;
 
-    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtService jwtService) {
+    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtService jwtService, ApplicationEventPublisher publisher) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
-        this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
+        this.publisher = publisher;
+        this.authenticationManager = authenticationManager;
     }
 
     @Caching(put = {
@@ -63,31 +69,32 @@ public class UserService implements IUserService {
             userEntity.setPassword(hashedPassword);
 
             UserEntity savedUser = userRepository.save(userEntity);
+            log.info("Publishing user registration event for email: {}", savedUser.getEmail());
+            publisher.publishEvent(new UserRegisterationEvent(savedUser.getEmail()));
+            log.info("User registration event published for email: {}", savedUser.getEmail());
             return userMapper.toResponseDTO(savedUser);
         }
     }
 
     public AuthResponseDTO loginUser(LoginDTO loginDTO){
+        UserEntity userEntity = userRepository.findByEmail(loginDTO.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("Invalid email or password"));
         try{
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            loginDTO.getEmail(),
-                            loginDTO.getPassword()
+                            loginDTO.getEmail()
+                            , loginDTO.getPassword()
                     )
             );
-            if(authentication.isAuthenticated()){
-                UserEntity userEntity = (UserEntity) authentication.getPrincipal();
-                //TODO: surround with an if to check if user is active or not
-                assert userEntity != null;
-                String accesstoken = jwtService.generateAccessToken(userEntity);
-                String refreshtoken = jwtService.generateRefreshToken(userEntity);
-                LoginResponseDTO loginResponseDTO = userMapper.toResponseDTO(userEntity);
-                loginResponseDTO.setToken(accesstoken);
-                return new AuthResponseDTO(loginResponseDTO, refreshtoken);
-            } else {
+            if(!authentication.isAuthenticated()){
                 throw new ResourceNotFoundException("Invalid email or password");
             }
-        }catch (Exception e){
+            String accesstoken = jwtService.generateAccessToken(userEntity);
+            String refreshtoken = jwtService.generateRefreshToken(userEntity);
+            LoginResponseDTO loginResponseDTO = userMapper.toResponseDTO(userEntity);
+            loginResponseDTO.setToken(accesstoken);
+            return new AuthResponseDTO(loginResponseDTO, refreshtoken);
+        } catch (Exception e) {
             throw new ResourceNotFoundException("Invalid email or password");
         }
     }

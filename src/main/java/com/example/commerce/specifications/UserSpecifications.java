@@ -3,6 +3,8 @@ package com.example.commerce.specifications;
 import com.example.commerce.entities.UserEntity;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.util.Locale;
+
 public class UserSpecifications {
 
     public static Specification<UserEntity> searchByKeyword(String keyword) {
@@ -11,7 +13,7 @@ public class UserSpecifications {
                 return criteriaBuilder.conjunction();
             }
             
-            String likePattern = "%" + keyword.toLowerCase() + "%";
+            String likePattern = "%" + keyword.toLowerCase(Locale.ROOT) + "%";
             
             return criteriaBuilder.or(
                 criteriaBuilder.like(criteriaBuilder.lower(root.get("firstName")), likePattern),

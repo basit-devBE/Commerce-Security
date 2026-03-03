@@ -1,7 +1,5 @@
 package com.example.commerce.graphql;
 
-import com.example.commerce.dtos.requests.AddOrderDTO;
-import com.example.commerce.dtos.requests.OrderItemDTO;
 import com.example.commerce.dtos.requests.UpdateOrderDTO;
 import com.example.commerce.dtos.responses.GraphQLPagedResponse;
 import com.example.commerce.dtos.responses.OrderItemResponseDTO;
@@ -9,7 +7,6 @@ import com.example.commerce.dtos.responses.OrderResponseDTO;
 import com.example.commerce.dtos.responses.ProductResponseDTO;
 import com.example.commerce.entities.UserEntity;
 import com.example.commerce.enums.OrderStatus;
-import com.example.commerce.graphql.input.OrderInput.CreateOrderInput;
 import com.example.commerce.graphql.input.OrderInput.UpdateOrderStatusInput;
 import com.example.commerce.graphql.input.PaginationInput;
 import com.example.commerce.graphql.utils.GraphQLResponseMapper;
@@ -131,22 +128,21 @@ public class OrderGraphQLController {
         return responseMapper.toGraphQLPagedResponse(ordersPage);
     }
 
-    // ==================== MUTATIONS ====================
 
-    @MutationMapping
-    public OrderResponseDTO createOrder(@Argument @Valid CreateOrderInput input) {
-        AddOrderDTO dto = new AddOrderDTO();
-        dto.setUserId(input.userId());
-        dto.setItems(input.items().stream()
-                .map(item -> {
-                    OrderItemDTO itemDTO = new OrderItemDTO();
-                    itemDTO.setProductId(item.productId());
-                    itemDTO.setQuantity(item.quantity());
-                    return itemDTO;
-                })
-                .collect(Collectors.toList()));
-        return orderService.createOrder(dto);
-    }
+//    @MutationMapping
+//    public OrderResponseDTO createOrder(@Argument @Valid CreateOrderInput input) {
+//        AddOrderDTO dto = new AddOrderDTO();
+//        dto.setUserId(input.userId());
+//        dto.setItems(input.items().stream()
+//                .map(item -> {
+//                    OrderItemDTO itemDTO = new OrderItemDTO();
+//                    itemDTO.setProductId(item.productId());
+//                    itemDTO.setQuantity(item.quantity());
+//                    return itemDTO;
+//                })
+//                .collect(Collectors.toList()));
+//        return orderService.createOrder(dto);
+//    }
 
     @MutationMapping
     public OrderResponseDTO updateOrderStatus(@Argument Long id, @Argument @Valid UpdateOrderStatusInput input) {

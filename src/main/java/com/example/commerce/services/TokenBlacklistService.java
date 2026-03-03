@@ -1,14 +1,16 @@
 package com.example.commerce.services;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @Service
 public class TokenBlacklistService {
-    
     private final Map<String, Long> blacklistedTokens = new ConcurrentHashMap<>();
     private final JwtService jwtService;
 
@@ -17,17 +19,19 @@ public class TokenBlacklistService {
     }
 
     public void blacklistToken(String token) {
-        Long expirationTime = jwtService.extractAllClaims(token, jwtService.getAccessSecretKey())
+        Long expirationTime = jwtService.extractAllAccessClaims(token)
                 .getExpiration().getTime();
         blacklistedTokens.put(token, expirationTime);
-        cleanupExpiredTokens();
     }
 
     public boolean isBlacklisted(String token) {
         return blacklistedTokens.containsKey(token);
     }
 
-    private void cleanupExpiredTokens() {
+
+    @Scheduled(fixedRate = 6000000) // Run every 100 minutes
+    public void cleanupExpiredTokens() {
+        log.info("Running token blacklist cleanup...");
         long currentTime = new Date().getTime();
         blacklistedTokens.entrySet().removeIf(entry -> entry.getValue() < currentTime);
     }
