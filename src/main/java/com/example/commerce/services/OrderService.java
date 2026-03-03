@@ -1,6 +1,5 @@
 package com.example.commerce.services;
 
-import com.example.commerce.dtos.requests.AddOrderDTO;
 import com.example.commerce.dtos.requests.OrderItemDTO;
 import com.example.commerce.dtos.requests.UpdateOrderDTO;
 import com.example.commerce.dtos.responses.OrderItemResponseDTO;
@@ -8,12 +7,15 @@ import com.example.commerce.dtos.responses.OrderResponseDTO;
 import com.example.commerce.entities.*;
 import com.example.commerce.enums.OrderStatus;
 import com.example.commerce.errorhandlers.ResourceNotFoundException;
+import com.example.commerce.events.OrderCreatedEvent;
 import com.example.commerce.interfaces.IOrderService;
 import com.example.commerce.mappers.OrderMapper;
 import com.example.commerce.repositories.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class OrderService implements IOrderService {
     private final OrderRepository orderRepository;
@@ -31,31 +34,63 @@ public class OrderService implements IOrderService {
     private final UserRepository userRepository;
     private final InventoryRepository inventoryRepository;
     private final OrderMapper orderMapper;
+    private final ApplicationEventPublisher publisher;
+    private final com.example.commerce.repositories.CartRepository cartRepository;
 
     public OrderService(OrderRepository orderRepository, 
                        OrderItemsRepository orderItemsRepository,
                        ProductRepository productRepository,
                        UserRepository userRepository,
                        InventoryRepository inventoryRepository,
-                       OrderMapper orderMapper) {
+                       OrderMapper orderMapper,
+                       ApplicationEventPublisher publisher,
+                       com.example.commerce.repositories.CartRepository cartRepository) {
         this.orderRepository = orderRepository;
         this.orderItemsRepository = orderItemsRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.inventoryRepository = inventoryRepository;
         this.orderMapper = orderMapper;
+        this.publisher = publisher;
+        this.cartRepository = cartRepository;
     }
 
     @CachePut(value = "orderById", key = "#result.id")
-    @CacheEvict(value = {"inventoryById", "inventoryByProductId", "allOrders"}, allEntries = true)
+    @CacheEvict(value = {"inventoryById", "inventoryByProductId", "allOrders", "cartByUserId"}, allEntries = true)
     @Transactional
-    public OrderResponseDTO createOrder(AddOrderDTO addOrderDTO) {
-        UserEntity user = validateUser(addOrderDTO.getUserId());
-        List<OrderItemsEntity> orderItems = processOrderItems(addOrderDTO.getItems());
+    public OrderResponseDTO createOrderFromCart(Long userId) {
+        UserEntity user = validateUser(userId);
+        CartEntity cart = cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found for user"));
+        
+        if (cart.getItems().isEmpty()) {
+            throw new IllegalArgumentException("Cannot create order from empty cart");
+        }
+        
+        List<OrderItemDTO> itemDTOs = cart.getItems().stream()
+                .map(item -> {
+                    OrderItemDTO dto = new OrderItemDTO();
+                    dto.setProductId(item.getProduct().getId());
+                    dto.setQuantity(item.getQuantity());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+        
+        List<OrderItemsEntity> orderItems = processOrderItems(itemDTOs);
         double totalAmount = calculateTotalAmount(orderItems);
         
         OrderEntity savedOrder = saveOrder(user, totalAmount);
         List<OrderItemsEntity> savedItems = saveOrderItems(orderItems, savedOrder);
+        
+        cart.getItems().clear();
+        cartRepository.save(cart);
+        
+        publisher.publishEvent(new OrderCreatedEvent(
+            savedOrder.getId(),
+            user.getEmail(),
+            user.getFirstName() + " " + user.getLastName(),
+            totalAmount
+        ));
         
         return buildOrderResponse(savedOrder, savedItems);
     }

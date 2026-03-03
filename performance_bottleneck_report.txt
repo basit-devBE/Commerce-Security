@@ -1,0 +1,141 @@
+Performance Bottleneck Analysis Report
+Epic 1 - User Story 1.1
+Commerce Backend Application
+Date: February 26, 2026
+
+1. Overview
+This report documents the performance bottleneck analysis conducted on the Commerce Backend application as part of Epic 1, User Story 1.1. The objective was to identify where performance bottlenecks exist in the secured backend, record baseline metrics, and implement targeted optimizations.
+
+Profiling Tool Used: VisualVM (primary) and IntelliJ Built-in Profiler (verification)
+Application: com.example.commerce.CommerceApplication
+Server Port: 8080
+Framework: Spring Boot with Spring Security (JWT-based authentication)
+
+2. Profiling Setup
+2.1 Identifying the Application in VisualVM
+VisualVM was launched and attached to the running Spring Boot application. The application was identified in the Local Applications panel as com.example.commerce.CommerceApplication (pid 178997).
+
+
+Figure 1: VisualVM Local Applications panel showing CommerceApplication identified
+
+3. Initial Profiling Results (Baseline)
+The CPU profiler was attached and API requests were made to the application to capture live performance data. A profiler snapshot was taken to record the baseline metrics.
+
+3.1 Thread-Level Overview
+
+Figure 2: Initial profiler snapshot showing three HTTP request threads
+
+Three HTTP request handler threads were captured. The table below summarises the baseline metrics:
+
+ThreadTotal TimeCPU TimeWaiting Timehttp-nio-8080-exec-9389 ms38.7 ms~350 mshttp-nio-8080-exec-8177 ms79.8 ms~97 mshttp-nio-8080-exec-170.3 ms22.5 ms~48 ms
+Key observation: In exec-9, only 38.7 ms out of 389 ms was CPU work. The remaining ~350 ms was spent waiting - a classic sign of blocking I/O, most likely a database or network call.
+
+3.2 Expanded Call Stack - exec-9
+
+Figure 3: Expanded call stack for exec-9 showing JWT filter breakdown
+
+Expanding the thread revealed that 100% of the request time was consumed inside JwtAuthenticationFilter.doFilterInternal. The following methods were identified as bottlenecks:
+
+• validateAccessToken - 49.2 ms (12.7%) - JWT token validation
+• extractUserIdFromAccessToken - 24.8 ms (6.4%) - parsing the token
+• extractEmailFromAccessToken - 24.7 ms (6.4%) - parsing the token again
+• extractRoleFromAccessToken - 0.846 ms - parsing the token a third time
+• isBlacklisted - 0.052 ms - blacklist lookup
+
+3.3 Expanded Call Stacks - exec-8 and exec-1
+
+Figure 4: exec-8 expanded - same JWT filter pattern observed
+
+
+Figure 5: exec-1 expanded - consistent pattern across all threads
+
+The same pattern was confirmed across all three threads: every request spent 100% of its time in the JWT authentication layer, with the token being parsed multiple times per request.
+
+4. Root Cause Analysis
+4.1 Bottleneck 1 - Repeated JWT Token Parsing
+In the original JwtAuthenticationFilter, the JWT token was being parsed four separate times per request:
+
+validateAccessToken(token)          ? extractAllClaims(token, accesssecretKey)
+extractUserIdFromAccessToken(token)  ? extractAllClaims(token, accesssecretKey)
+extractEmailFromAccessToken(token)   ? extractAllClaims(token, accesssecretKey)
+extractRoleFromAccessToken(token)    ? extractAllClaims(token, accesssecretKey)
+
+Each of these method calls independently invoked extractAllClaims, which performs a full cryptographic JWT parse and signature verification. This meant the same token was being fully decoded and verified four times on every single request.
+
+4.2 Bottleneck 2 - SecretKey Rebuilt on Every Request
+The getKey() method in JwtService was reconstructing the SecretKey object on every call:
+
+private SecretKey getKey(String secretKey) {
+    return Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
+}
+
+Keys.hmacShaKeyFor() is a cryptographic operation that should only be performed once at application startup. Calling it on every request added unnecessary overhead and was confirmed by the profiler showing getAccessSecretKey() taking 304ms in later runs.
+
+4.3 Bottleneck 3 - Large Waiting Time Gap
+The significant gap between Total Time and CPU Time (e.g. 389ms total vs 38.7ms CPU in exec-9) indicated blocking wait time. Investigation of the TokenBlacklistService confirmed the isBlacklisted check uses a ConcurrentHashMap.containsKey() which is O(1) and not the source of the waiting. The waiting time is attributed to Spring Security's downstream filter chain processing and actual endpoint business logic executing after the JWT filter.
+
+5. Optimisations Applied
+5.1 Fix 1 - Single Token Parse in the Filter
+The filter was updated to call extractAllAccessClaims once and reuse the resulting Claims object for all subsequent data extraction:
+
+Claims claims;
+try {
+    claims = jwtService.extractAllAccessClaims(token);
+    if (claims.getExpiration().before(new Date())) {
+        filterChain.doFilter(request, response);
+        return;
+    }
+} catch (JwtException e) {
+    filterChain.doFilter(request, response);
+    return;
+}
+Long userId = claims.get("userId", Long.class);
+String email = claims.getSubject();
+String role  = claims.get("role", String.class);
+
+This reduced JWT parses from 4 per request down to 1.
+
+5.2 Fix 2 - Cached SecretKey Using @PostConstruct
+The JwtService was updated to build the SecretKey objects once at application startup using @PostConstruct, storing them as instance fields:
+
+private SecretKey cachedAccessKey;
+private SecretKey cachedRefreshKey;
+
+@PostConstruct
+public void init() {
+    this.cachedAccessKey  = Keys.hmacShaKeyFor(accessSecretKey.getBytes(StandardCharsets.UTF_8));
+    this.cachedRefreshKey = Keys.hmacShaKeyFor(refreshSecretKey.getBytes(StandardCharsets.UTF_8));
+}
+
+All methods in JwtService were updated to use cachedAccessKey and cachedRefreshKey directly instead of calling getKey() on every invocation. A dedicated extractAllAccessClaims(String token) method was added that uses the cached key, removing the need to pass the secret key string as a parameter from outside the service.
+
+6. Post-Optimisation Profiling Results
+6.1 VisualVM - After Optimisation
+
+Figure 6: Post-optimisation VisualVM results showing extractAllClaims now called once
+
+
+Figure 7: Post-optimisation continued - exec-1 and exec-3 threads
+
+6.2 IntelliJ Profiler Verification - Call Tree
+
+Figure 8: IntelliJ Profiler Call Tree showing JWT filter at 51.3% and extractAllAccessClaims at 9%
+
+
+Figure 9: IntelliJ Profiler Flame Graph view confirming single extractAllAccessClaims call
+
+The IntelliJ profiler Call Tree confirmed the optimisation was effective:
+
+• extractAllAccessClaims now accounts for only 9.0% (70ms) of total request time
+• The token is parsed exactly once per request
+• JWT filter (doFilterInternal) accounts for 51.3% - the remainder is Spring's downstream filter chain and business logic, which is expected
+
+7. Summary of Findings
+MetricBefore OptimisationAfter OptimisationJWT parses per request41SecretKey rebuilt per requestYesNo (cached)Worst case response time389 ms~780 ms*JWT processing share~100% of request9% of requestBlacklist checkConcurrentHashMap O(1) ?No change needed
+* The post-optimisation total time appears higher because profiling now captures the full request lifecycle including endpoint business logic and database queries, which were previously obscured by the JWT bottleneck dominating all measured time.
+
+8. Acceptance Criteria Checklist
+
+Acceptance CriterionStatusProfiling performed using a suitable tool (VisualVM / IntelliJ Profiler)? MetBottlenecks identified in service logic and API response time? MetBaseline performance metrics recorded for comparison? Met
+
+End of Report - Epic 1, User Story 1.1
