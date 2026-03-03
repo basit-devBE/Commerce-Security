@@ -26,11 +26,14 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+
 @Slf4j
 @Service
 public class UserService implements IUserService {
@@ -39,15 +42,15 @@ public class UserService implements IUserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final ApplicationEventPublisher publisher;
-    private final AsyncAuthService asyncAuthService;
+    private AuthenticationManager authenticationManager;
 
-    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtService jwtService, ApplicationEventPublisher publisher, AsyncAuthService asyncAuthService) {
+    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtService jwtService, ApplicationEventPublisher publisher) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.publisher = publisher;
-        this.asyncAuthService = asyncAuthService;
+        this.authenticationManager = authenticationManager;
     }
 
     @Caching(put = {
@@ -76,17 +79,16 @@ public class UserService implements IUserService {
     public AuthResponseDTO loginUser(LoginDTO loginDTO){
         UserEntity userEntity = userRepository.findByEmail(loginDTO.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("Invalid email or password"));
-        
-        try {
-            Boolean passwordMatches = asyncAuthService.verifyPassword(
-                loginDTO.getPassword(), 
-                userEntity.getPassword()
-            ).join();
-            
-            if (!passwordMatches) {
+        try{
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginDTO.getEmail()
+                            , loginDTO.getPassword()
+                    )
+            );
+            if(!authentication.isAuthenticated()){
                 throw new ResourceNotFoundException("Invalid email or password");
             }
-            
             String accesstoken = jwtService.generateAccessToken(userEntity);
             String refreshtoken = jwtService.generateRefreshToken(userEntity);
             LoginResponseDTO loginResponseDTO = userMapper.toResponseDTO(userEntity);
