@@ -26,8 +26,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -39,17 +37,17 @@ public class UserService implements IUserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final ApplicationEventPublisher publisher;
+    private final AsyncAuthService asyncAuthService;
 
-    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtService jwtService, ApplicationEventPublisher publisher) {
+    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtService jwtService, ApplicationEventPublisher publisher, AsyncAuthService asyncAuthService) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
-        this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.publisher = publisher;
+        this.asyncAuthService = asyncAuthService;
     }
 
     @Caching(put = {
@@ -76,27 +74,25 @@ public class UserService implements IUserService {
     }
 
     public AuthResponseDTO loginUser(LoginDTO loginDTO){
-        try{
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            loginDTO.getEmail(),
-                            loginDTO.getPassword()
-                    )
-            );
-            if(authentication.isAuthenticated()){
-                UserEntity userEntity = (UserEntity) authentication.getPrincipal();
-                if(userEntity == null){
-                    throw new ResourceNotFoundException("User not found with email: " + loginDTO.getEmail());
-                }
-                String accesstoken = jwtService.generateAccessToken(userEntity);
-                String refreshtoken = jwtService.generateRefreshToken(userEntity);
-                LoginResponseDTO loginResponseDTO = userMapper.toResponseDTO(userEntity);
-                loginResponseDTO.setToken(accesstoken);
-                return new AuthResponseDTO(loginResponseDTO, refreshtoken);
-            } else {
+        UserEntity userEntity = userRepository.findByEmail(loginDTO.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("Invalid email or password"));
+        
+        try {
+            Boolean passwordMatches = asyncAuthService.verifyPassword(
+                loginDTO.getPassword(), 
+                userEntity.getPassword()
+            ).join();
+            
+            if (!passwordMatches) {
                 throw new ResourceNotFoundException("Invalid email or password");
             }
-        }catch (Exception e){
+            
+            String accesstoken = jwtService.generateAccessToken(userEntity);
+            String refreshtoken = jwtService.generateRefreshToken(userEntity);
+            LoginResponseDTO loginResponseDTO = userMapper.toResponseDTO(userEntity);
+            loginResponseDTO.setToken(accesstoken);
+            return new AuthResponseDTO(loginResponseDTO, refreshtoken);
+        } catch (Exception e) {
             throw new ResourceNotFoundException("Invalid email or password");
         }
     }
