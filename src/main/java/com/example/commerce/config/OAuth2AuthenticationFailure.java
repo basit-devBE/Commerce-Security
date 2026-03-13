@@ -12,7 +12,8 @@ import java.rmi.ServerException;
 @Component
 public class OAuth2AuthenticationFailure extends SimpleUrlAuthenticationFailureHandler {
     @Override
-    public void onAuthenticationFailure(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull AuthenticationException exception) throws java.io.IOException, ServerException{
+    public void onAuthenticationFailure(HttpServletRequest request, @NonNull HttpServletResponse response,
+            @NonNull AuthenticationException exception) throws java.io.IOException, ServerException {
         String errorMessage = request.getParameter("error");
         if (errorMessage != null) {
         } else {

@@ -30,9 +30,6 @@ public class CustomExceptionHandler {
             request.getDescription(false)
         );
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
-        //TODO:Not all instances of ResourceNotFoundException should return 404, some might be 400, need to add more specific exceptions for those cases
-        //TODO: Look into using dynamic exception handling to avoid having to create a new exception class for every case,
-        // maybe use an enum to define the error type and status code, then use a single exception class that takes the enum as a parameter and returns the appropriate response based on the enum value
     }
 
     @ExceptionHandler(value = ResourceAlreadyExists.class)
