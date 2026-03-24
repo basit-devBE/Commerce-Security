@@ -17,6 +17,8 @@ import Orders from './pages/Orders';
 import Profile from './pages/Profile';
 import AdminDashboardGraphQL from './pages/AdminDashboardGraphQL';
 import OAuth2RedirectHandler from './pages/OAuth2RedirectHandler';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentCancel from './pages/PaymentCancel';
 
 function App() {
   return (
@@ -41,6 +43,22 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Checkout />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/payment/success"
+                element={
+                  <ProtectedRoute>
+                    <PaymentSuccess />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/payment/cancel"
+                element={
+                  <ProtectedRoute>
+                    <PaymentCancel />
                   </ProtectedRoute>
                 }
               />

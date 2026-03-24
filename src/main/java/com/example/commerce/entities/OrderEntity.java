@@ -1,6 +1,5 @@
 package com.example.commerce.entities;
 
-
 import com.example.commerce.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -15,7 +14,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Table(name = "orders", indexes = {
-    @Index(name = "idx_order_user_id", columnList = "user_id")
+        @Index(name = "idx_order_user_id", columnList = "user_id")
 })
 @AllArgsConstructor
 @NoArgsConstructor
@@ -42,4 +41,3 @@ public class OrderEntity {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 }
-

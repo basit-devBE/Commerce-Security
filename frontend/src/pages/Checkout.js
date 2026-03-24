@@ -18,16 +18,22 @@ const Checkout = () => {
     setLoading(true);
 
     try {
-      await orderAPI.create();
-      setSuccess(true);
-      clearCart();
-      
-      setTimeout(() => {
-        navigate('/orders');
-      }, 2000);
+      const response = await orderAPI.create();
+      // The response payload from our new backend contains the Stripe paymentUrl
+      if (response.data && response.data.data && response.data.data.paymentUrl) {
+          window.location.href = response.data.data.paymentUrl;
+      } else if (response.data && response.data.paymentUrl) {
+          window.location.href = response.data.paymentUrl;
+      } else {
+        // Fallback if Stripe doesn't return a URL for some reason
+        setSuccess(true);
+        clearCart();
+        setTimeout(() => {
+          navigate('/orders');
+        }, 2000);
+      }
     } catch (err) {
       setError(err);
-    } finally {
       setLoading(false);
     }
   };
@@ -50,7 +56,7 @@ const Checkout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-gray-50 pt-24 pb-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-4xl font-bold text-gray-900 mb-8">Checkout</h1>
 
@@ -88,12 +94,6 @@ const Checkout = () => {
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Payment Information</h2>
                 
                 <ErrorAlert error={error} onDismiss={() => setError(null)} />
-
-                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded mb-6">
-                  <p className="text-sm text-blue-700">
-                    This is a demo checkout. No actual payment will be processed.
-                  </p>
-                </div>
 
                 <button
                   type="submit"

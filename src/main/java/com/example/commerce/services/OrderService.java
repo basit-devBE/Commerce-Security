@@ -4,10 +4,10 @@ import com.example.commerce.dtos.requests.OrderItemDTO;
 import com.example.commerce.dtos.requests.UpdateOrderDTO;
 import com.example.commerce.dtos.responses.OrderItemResponseDTO;
 import com.example.commerce.dtos.responses.OrderResponseDTO;
+import com.example.commerce.dtos.responses.PaymentResponse;
 import com.example.commerce.entities.*;
 import com.example.commerce.enums.OrderStatus;
 import com.example.commerce.errorhandlers.ResourceNotFoundException;
-import com.example.commerce.events.OrderCreatedEvent;
 import com.example.commerce.interfaces.IOrderService;
 import com.example.commerce.mappers.OrderMapper;
 import com.example.commerce.repositories.*;
@@ -35,16 +35,17 @@ public class OrderService implements IOrderService {
     private final InventoryRepository inventoryRepository;
     private final OrderMapper orderMapper;
     private final ApplicationEventPublisher publisher;
+    private final PaymentService paymentService;
     private final com.example.commerce.repositories.CartRepository cartRepository;
 
-    public OrderService(OrderRepository orderRepository, 
-                       OrderItemsRepository orderItemsRepository,
-                       ProductRepository productRepository,
-                       UserRepository userRepository,
-                       InventoryRepository inventoryRepository,
-                       OrderMapper orderMapper,
-                       ApplicationEventPublisher publisher,
-                       com.example.commerce.repositories.CartRepository cartRepository) {
+    public OrderService(OrderRepository orderRepository,
+                        OrderItemsRepository orderItemsRepository,
+                        ProductRepository productRepository,
+                        UserRepository userRepository,
+                        InventoryRepository inventoryRepository,
+                        OrderMapper orderMapper,
+                        ApplicationEventPublisher publisher, PaymentService paymentService,
+                        CartRepository cartRepository) {
         this.orderRepository = orderRepository;
         this.orderItemsRepository = orderItemsRepository;
         this.productRepository = productRepository;
@@ -52,6 +53,7 @@ public class OrderService implements IOrderService {
         this.inventoryRepository = inventoryRepository;
         this.orderMapper = orderMapper;
         this.publisher = publisher;
+        this.paymentService = paymentService;
         this.cartRepository = cartRepository;
     }
 
@@ -82,17 +84,13 @@ public class OrderService implements IOrderService {
         OrderEntity savedOrder = saveOrder(user, totalAmount);
         List<OrderItemsEntity> savedItems = saveOrderItems(orderItems, savedOrder);
         
-        cart.getItems().clear();
-        cartRepository.save(cart);
+
         
-        publisher.publishEvent(new OrderCreatedEvent(
-            savedOrder.getId(),
-            user.getEmail(),
-            user.getFirstName() + " " + user.getLastName(),
-            totalAmount
-        ));
+        OrderResponseDTO response = buildOrderResponse(savedOrder, savedItems);
+        PaymentResponse paymentResponse = paymentService.createCheckoutSession(userId, savedOrder.getId());
+        response.setPaymentUrl(paymentResponse.getPaymentUrl());
         
-        return buildOrderResponse(savedOrder, savedItems);
+        return response;
     }
 
     private UserEntity validateUser(Long userId) {

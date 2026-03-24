@@ -6,6 +6,7 @@ import com.example.commerce.services.CustomOAuth2UserService;
 import com.example.commerce.services.CustomUserService;
 import com.example.commerce.services.JwtService;
 import com.example.commerce.services.TokenBlacklistService;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -42,7 +43,7 @@ public class SecurityConfig {
                                            TokenBlacklistService tokenBlacklistService,
                                            CustomAuthenticationEntryPoint authenticationEntryPoint,
                                            CustomAccessDeniedHandler accessDeniedHandler,
-                                           CorsConfigurationSource corsConfigurationSource) throws Exception {
+                                           @Qualifier("corsConfigurationSource") CorsConfigurationSource corsConfigurationSource) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(AbstractHttpConfigurer::disable)
@@ -59,7 +60,8 @@ public class SecurityConfig {
                                         "/swagger-ui/**",
                                         "/v3/api-docs/**",
                                         "/graphiql/**",
-                                        "/actuator/**"
+                                        "/actuator/**",
+                                        "/api/payments/webhook"  // Stripe posts here — auth via signature header, not JWT
                                 )
                                 .permitAll()
                                 .anyRequest().authenticated()

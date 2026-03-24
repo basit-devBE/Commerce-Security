@@ -1,6 +1,5 @@
 package com.example.commerce.entities;
 
-
 import com.example.commerce.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -18,7 +17,7 @@ import java.util.Collection;
 import java.util.List;
 
 @Entity
-@Table(name = "users" , indexes = {
+@Table(name = "users", indexes = {
         @Index(name = "idx_user_email", columnList = "email"),
         @Index(name = "idx_id", columnList = "id")
 })
@@ -38,7 +37,7 @@ public class UserEntity implements UserDetails {
     @Column(nullable = false)
     private String lastName;
 
-    @Column(nullable=false, unique=true)
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Column(nullable = true)
@@ -53,7 +52,6 @@ public class UserEntity implements UserDetails {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private UserRole role;
-
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -83,5 +81,18 @@ public class UserEntity implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+    // Explicit getters to bypass Lombok incremental build glitches
+    public Long getId() {
+        return this.id;
+    }
+
+    public String getEmail() {
+        return this.email;
+    }
+
+    public UserRole getRole() {
+        return this.role;
     }
 }

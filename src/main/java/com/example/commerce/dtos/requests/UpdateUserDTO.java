@@ -10,6 +10,5 @@ public class UpdateUserDTO {
     @Email(message = "Invalid email format")
     private String email;
 
-//    private UserRole role = UserRole.CUSTOMER;
 }
 

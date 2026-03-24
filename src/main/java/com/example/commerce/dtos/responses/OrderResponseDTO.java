@@ -17,4 +17,5 @@ public class OrderResponseDTO {
     private List<OrderItemResponseDTO> items;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String paymentUrl;
 }
