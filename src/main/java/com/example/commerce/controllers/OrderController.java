@@ -1,5 +1,6 @@
 package com.example.commerce.controllers;
 
+import com.example.commerce.dtos.requests.AddOrderDTO;
 import com.example.commerce.dtos.requests.UpdateOrderDTO;
 import com.example.commerce.dtos.responses.ApiResponse;
 import com.example.commerce.dtos.responses.OrderResponseDTO;
@@ -30,9 +31,9 @@ public class OrderController {
 
     @Operation(summary = "Create order from cart", security = @SecurityRequirement(name = "Bearer Authentication"))
     @PostMapping("/create")
-    public ResponseEntity<ApiResponse<OrderResponseDTO>> createOrder(HttpServletRequest httpRequest) {
+    public ResponseEntity<ApiResponse<OrderResponseDTO>> createOrder(@Valid @RequestBody AddOrderDTO request, HttpServletRequest httpRequest) {
         Long authenticatedUserId = (Long) httpRequest.getAttribute("authenticatedUserId");
-        OrderResponseDTO order = orderService.createOrderFromCart(authenticatedUserId);
+        OrderResponseDTO order = orderService.createOrderFromCart(authenticatedUserId,request.getPaymentChannel());
         ApiResponse<OrderResponseDTO> apiResponse = new ApiResponse<>(HttpStatus.OK.value(), "Order created successfully", order);
         return ResponseEntity.ok(apiResponse);
     }

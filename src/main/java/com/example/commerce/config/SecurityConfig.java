@@ -61,7 +61,8 @@ public class SecurityConfig {
                                         "/v3/api-docs/**",
                                         "/graphiql/**",
                                         "/actuator/**",
-                                        "/api/payments/webhook"  // Stripe posts here — auth via signature header, not JWT
+                                        "/api/payments/webhook",
+                                        "/api/payments/paystack/webhook"
                                 )
                                 .permitAll()
                                 .anyRequest().authenticated()

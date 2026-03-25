@@ -2,11 +2,12 @@ package com.example.commerce.interfaces;
 
 import com.example.commerce.dtos.requests.UpdateOrderDTO;
 import com.example.commerce.dtos.responses.OrderResponseDTO;
+import com.example.commerce.enums.PaymentChannel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface IOrderService {
-    OrderResponseDTO createOrderFromCart(Long userId);
+    OrderResponseDTO createOrderFromCart(Long userId, PaymentChannel paymentChannel);
 
     Page<OrderResponseDTO> getAllOrders(Pageable pageable);
 

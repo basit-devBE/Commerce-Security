@@ -7,6 +7,7 @@ import com.example.commerce.dtos.responses.OrderResponseDTO;
 import com.example.commerce.dtos.responses.PaymentResponse;
 import com.example.commerce.entities.*;
 import com.example.commerce.enums.OrderStatus;
+import com.example.commerce.enums.PaymentChannel;
 import com.example.commerce.errorhandlers.ResourceNotFoundException;
 import com.example.commerce.interfaces.IOrderService;
 import com.example.commerce.mappers.OrderMapper;
@@ -60,7 +61,7 @@ public class OrderService implements IOrderService {
     @CachePut(value = "orderById", key = "#result.id")
     @CacheEvict(value = {"inventoryById", "inventoryByProductId", "allOrders", "cartByUserId"}, allEntries = true)
     @Transactional
-    public OrderResponseDTO createOrderFromCart(Long userId) {
+    public OrderResponseDTO createOrderFromCart(Long userId, PaymentChannel paymentChannel) {
         UserEntity user = validateUser(userId);
         CartEntity cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart not found for user"));
@@ -87,7 +88,14 @@ public class OrderService implements IOrderService {
 
         
         OrderResponseDTO response = buildOrderResponse(savedOrder, savedItems);
-        PaymentResponse paymentResponse = paymentService.createCheckoutSession(userId, savedOrder.getId());
+        
+        PaymentResponse paymentResponse;
+        switch (paymentChannel) {
+            case CARD -> paymentResponse = paymentService.createCheckoutSession(userId, savedOrder.getId());
+            case MOMO -> paymentResponse = paymentService.initializeMomoPayment(userId, savedOrder.getId());
+            default -> throw new IllegalArgumentException("Unsupported payment channel: " + paymentChannel);
+        }
+        
         response.setPaymentUrl(paymentResponse.getPaymentUrl());
         
         return response;

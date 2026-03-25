@@ -11,6 +11,7 @@ const Checkout = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [paymentChannel, setPaymentChannel] = useState('CARD');
 
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
@@ -18,7 +19,7 @@ const Checkout = () => {
     setLoading(true);
 
     try {
-      const response = await orderAPI.create();
+      const response = await orderAPI.create({ paymentChannel });
       // The response payload from our new backend contains the Stripe paymentUrl
       if (response.data && response.data.data && response.data.data.paymentUrl) {
           window.location.href = response.data.data.paymentUrl;
@@ -92,6 +93,38 @@ const Checkout = () => {
             <div>
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Payment Information</h2>
+                
+                <div className="mb-6 space-y-3">
+                  <label className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${paymentChannel === 'CARD' ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                    <input
+                      type="radio"
+                      name="paymentChannel"
+                      value="CARD"
+                      checked={paymentChannel === 'CARD'}
+                      onChange={(e) => setPaymentChannel(e.target.value)}
+                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+                    />
+                    <div className="ml-3 flex flex-col">
+                      <span className="block text-sm font-medium text-gray-900">Credit / Debit Card</span>
+                      <span className="block text-sm text-gray-500">Pay securely with Stripe</span>
+                    </div>
+                  </label>
+                  
+                  <label className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${paymentChannel === 'MOMO' ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                    <input
+                      type="radio"
+                      name="paymentChannel"
+                      value="MOMO"
+                      checked={paymentChannel === 'MOMO'}
+                      onChange={(e) => setPaymentChannel(e.target.value)}
+                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+                    />
+                    <div className="ml-3 flex flex-col">
+                      <span className="block text-sm font-medium text-gray-900">Mobile Money (MOMO)</span>
+                      <span className="block text-sm text-gray-500">Pay with MTN, Telecel, or AT</span>
+                    </div>
+                  </label>
+                </div>
                 
                 <ErrorAlert error={error} onDismiss={() => setError(null)} />
 

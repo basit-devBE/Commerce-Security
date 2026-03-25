@@ -64,4 +64,19 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
+
+    /**
+     * Paystack webhook receiver — Paystack posts here when MOMO payment events happen.
+     */
+    @PostMapping("/paystack/webhook")
+    public ResponseEntity<Void> handlePaystackWebhook(
+            @RequestBody com.example.commerce.dtos.responses.PaystackWebhookPayload payload,
+            @RequestHeader(value = "x-paystack-signature", required = false) String signature) {
+        try {
+            paymentService.handlePaystackWebhook(payload, signature);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
 }

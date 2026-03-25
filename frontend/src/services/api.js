@@ -153,7 +153,7 @@ export const categoryAPI = {
 
 // Order APIs
 export const orderAPI = {
-  create: () => api.post('/orders/create'),
+  create: (data) => api.post('/orders/create', data),
   getUserOrders: (params) => api.get('/orders/user', { params }),
   getAll: (params) => api.get('/orders/admin/all', { params }),
   getById: (id) => api.get(`/orders/${id}`),
